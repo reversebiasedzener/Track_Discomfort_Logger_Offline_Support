@@ -473,6 +473,7 @@ const state = {
   discomfortUntil: 0,
   online: navigator.onLine,
   syncing: false,
+  wakeLock: null,
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -778,6 +779,28 @@ async function exportCSV() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// Wake Lock — keeps screen on during active session
+// ═══════════════════════════════════════════════════════════
+async function acquireWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    state.wakeLock = await navigator.wakeLock.request('screen');
+    state.wakeLock.addEventListener('release', () => {
+      state.wakeLock = null;
+      if (state.running) acquireWakeLock();
+    });
+  } catch (e) {}
+}
+
+async function releaseWakeLock() {
+  if (state.wakeLock) { await state.wakeLock.release(); state.wakeLock = null; }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.running) acquireWakeLock();
+});
+
+// ═══════════════════════════════════════════════════════════
 // Session control
 // ═══════════════════════════════════════════════════════════
 function toggleSession() {
@@ -790,12 +813,14 @@ function toggleSession() {
     btn.textContent = 'Stop Session';
     btn.className = 'btn danger-btn';
     dot.className = 'session-dot live';
+    acquireWakeLock();
   } else {
     btn.textContent = 'Start Session';
     btn.className = 'btn primary';
     dot.className = 'session-dot';
     document.getElementById('sessionLabel').textContent = 'Stopped';
     document.getElementById('recStrip').classList.add('hidden');
+    releaseWakeLock();
   }
 }
 
