@@ -566,9 +566,11 @@ async function tick() {
   document.getElementById('barY').style.width = Math.min(100, Math.abs(state.ay) / 12 * 100) + '%';
   document.getElementById('barZ').style.width = Math.min(100, Math.abs(state.az) / 3 * 100) + '%';
 
-  // Waiting overlay
+  // Waiting overlay — only show if session running, below threshold,
+  // AND at least 3 seconds have passed since session start (grace period)
   const waitEl = document.getElementById('waiting');
-  if (state.running && !above) {
+  const graceElapsed = state.sessionArmedAt && (Date.now() - state.sessionArmedAt > 3000);
+  if (state.running && !above && graceElapsed) {
     waitEl.classList.remove('hidden');
     document.getElementById('waitSpeed').textContent = Math.round(spd);
     document.getElementById('waitSpeed').className = 'speed-big' + (spd > cfg.threshold * 0.75 ? ' approaching' : '');
@@ -785,13 +787,16 @@ function toggleSession() {
     btn.textContent = 'Stop Session';
     btn.className = 'btn danger-btn';
     dot.className = 'session-dot live';
-    document.getElementById('waiting').classList.remove('hidden');
+    // Do NOT show waiting overlay immediately — tick() will show it
+    // only once we confirm speed is below threshold after a short grace period
+    state.sessionArmedAt = Date.now();
   } else {
     btn.textContent = 'Start Session';
     btn.className = 'btn primary';
     dot.className = 'session-dot';
     document.getElementById('sessionLabel').textContent = 'Stopped';
     document.getElementById('waiting').classList.add('hidden');
+    state.sessionArmedAt = null;
   }
 }
 
