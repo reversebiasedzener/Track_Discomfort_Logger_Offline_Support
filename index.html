@@ -145,13 +145,13 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .btn.primary { background: rgba(79,158,255,0.12); border-color: var(--accent-x); color: var(--accent-x); }
 .btn.danger-btn { background: var(--danger-dim); border-color: var(--danger); color: #ff8080; }
 
-/* Waiting overlay */
-#waiting { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 50; }
-#waiting.hidden { display: none; }
-.wait-label { font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
-.speed-big { font-family: var(--mono); font-size: 72px; font-weight: 600; color: var(--surface2); transition: color 0.3s; }
-.speed-big.approaching { color: var(--warn); }
-.wait-sub { font-size: 13px; color: var(--muted); text-align: center; max-width: 260px; line-height: 1.6; }
+/* Recording status strip — inline, never full-screen */
+.rec-strip { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 7px 16px; font-size: 12px; border-bottom: 1px solid var(--border); background: var(--surface); transition: background 0.3s; }
+.rec-strip.hidden { display: none; }
+.rec-strip.waiting { background: rgba(255,176,32,0.06); border-color: rgba(255,176,32,0.15); color: var(--warn); }
+.rec-strip.recording { background: rgba(34,197,94,0.06); border-color: rgba(34,197,94,0.15); color: var(--green); }
+.rec-strip-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.rec-strip.recording .rec-strip-dot { animation: pulse 2s infinite; }
 
 /* Config modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: flex-end; z-index: 100; }
@@ -186,6 +186,11 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <span id="threshLabel">Below 80 km/h</span>
       </span>
     </div>
+  </div>
+
+  <div class="rec-strip hidden" id="recStrip">
+    <div class="rec-strip-dot"></div>
+    <span id="recStripText">—</span>
   </div>
 
   <div class="conn-banner hidden" id="connBanner">
@@ -273,7 +278,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <span>Time</span><span>X</span><span>Y</span><span>Z</span><span>km/h</span><span>!</span>
       </div>
       <div class="log-body" id="logBody">
-        <div style="padding:16px;text-align:center;font-size:11px;color:var(--muted)">Log starts above 80 km/h</div>
+        <div data-ph style="padding:16px;text-align:center;font-size:11px;color:var(--muted)" id="logPlaceholder">Log starts above <span id="logThreshLabel">80</span> km/h</div>
       </div>
     </div>
 
@@ -286,14 +291,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   </div>
 </div>
 
-<!-- Waiting overlay -->
-<div id="waiting" class="hidden">
-  <div class="wait-label">Track Ride Monitor</div>
-  <div class="speed-big" id="waitSpeed">0</div>
-  <div style="font-size:13px;color:var(--muted)">km/h</div>
-  <div class="wait-sub">Recording starts automatically at <strong style="color:var(--text)" id="waitThresh">80</strong> km/h.<br>All data saves locally first.</div>
-  <button class="btn" onclick="showConfig()" style="max-width:200px;margin-top:8px">⚙ Configure</button>
-</div>
+
 
 <!-- Config modal -->
 <div class="modal-overlay hidden" id="configModal">
@@ -492,7 +490,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('cfgUrl').value = cfg.sheetsUrl;
   document.getElementById('cfgSession').value = cfg.sessionName;
   document.getElementById('cfgThreshold').value = cfg.threshold;
-  document.getElementById('waitThresh').textContent = cfg.threshold;
+  const tl = document.getElementById('logThreshLabel');
+  if (tl) tl.textContent = cfg.threshold;
 });
 
 window.addEventListener('online',  () => { state.online = true;  updateConnBanner(); backgroundSync(); });
@@ -566,16 +565,20 @@ async function tick() {
   document.getElementById('barY').style.width = Math.min(100, Math.abs(state.ay) / 12 * 100) + '%';
   document.getElementById('barZ').style.width = Math.min(100, Math.abs(state.az) / 3 * 100) + '%';
 
-  // Waiting overlay — only show if session running, below threshold,
-  // AND at least 3 seconds have passed since session start (grace period)
-  const waitEl = document.getElementById('waiting');
-  const graceElapsed = state.sessionArmedAt && (Date.now() - state.sessionArmedAt > 3000);
-  if (state.running && !above && graceElapsed) {
-    waitEl.classList.remove('hidden');
-    document.getElementById('waitSpeed').textContent = Math.round(spd);
-    document.getElementById('waitSpeed').className = 'speed-big' + (spd > cfg.threshold * 0.75 ? ' approaching' : '');
+  // Recording status strip — always visible when session is running
+  const strip = document.getElementById('recStrip');
+  const stripText = document.getElementById('recStripText');
+  if (state.running) {
+    strip.classList.remove('hidden');
+    if (above) {
+      strip.className = 'rec-strip recording';
+      stripText.textContent = 'Recording • ' + spd.toFixed(1) + ' km/h';
+    } else {
+      strip.className = 'rec-strip waiting';
+      stripText.textContent = 'Waiting for ' + cfg.threshold + ' km/h — currently ' + spd.toFixed(1) + ' km/h';
+    }
   } else {
-    waitEl.classList.add('hidden');
+    strip.classList.add('hidden');
   }
 
   if (!state.running || !above) return;
@@ -787,16 +790,12 @@ function toggleSession() {
     btn.textContent = 'Stop Session';
     btn.className = 'btn danger-btn';
     dot.className = 'session-dot live';
-    // Do NOT show waiting overlay immediately — tick() will show it
-    // only once we confirm speed is below threshold after a short grace period
-    state.sessionArmedAt = Date.now();
   } else {
     btn.textContent = 'Start Session';
     btn.className = 'btn primary';
     dot.className = 'session-dot';
     document.getElementById('sessionLabel').textContent = 'Stopped';
-    document.getElementById('waiting').classList.add('hidden');
-    state.sessionArmedAt = null;
+    document.getElementById('recStrip').classList.add('hidden');
   }
 }
 
@@ -828,7 +827,9 @@ function saveConfig() {
   localStorage.setItem('sheetsUrl', cfg.sheetsUrl);
   localStorage.setItem('sessionName', cfg.sessionName);
   localStorage.setItem('threshold', cfg.threshold);
-  document.getElementById('waitThresh').textContent = cfg.threshold;
+  // Update all threshold labels in UI
+  const tl = document.getElementById('logThreshLabel');
+  if (tl) tl.textContent = cfg.threshold;
   updateConnBanner();
   closeConfig();
 }
