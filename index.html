@@ -127,16 +127,17 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 /* Log table */
 .log-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-.log-header-row { display: grid; grid-template-columns: 72px 1fr 1fr 1fr 1fr 22px; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.log-header-row { display: grid; grid-template-columns: 68px repeat(6,1fr) 20px; gap: 3px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
 .log-header-row span { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .log-body { max-height: 150px; overflow-y: auto; }
 .log-body::-webkit-scrollbar { display: none; }
-.log-row { display: grid; grid-template-columns: 72px 1fr 1fr 1fr 1fr 22px; gap: 4px; padding: 6px 12px; border-bottom: 1px solid var(--border); }
+.log-row { display: grid; grid-template-columns: 68px repeat(6,1fr) 20px; gap: 3px; padding: 6px 12px; border-bottom: 1px solid var(--border); }
 .log-row:last-child { border-bottom: none; }
 .log-row.flagged { background: rgba(255,68,68,0.05); }
 .log-cell { font-family: var(--mono); font-size: 10px; color: var(--text); }
 .log-cell.time { color: var(--muted); }
 .log-cell.flag { color: var(--danger); font-size: 13px; text-align: center; }
+.log-cell.filtered { color: var(--accent-y); }
 
 /* Bottom bar */
 .bottombar { flex-shrink: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 10px 12px 16px; display: flex; gap: 8px; }
@@ -275,7 +276,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
     <div class="log-card">
       <div class="log-header-row">
-        <span>Time</span><span>X</span><span>Y</span><span>Z</span><span>km/h</span><span>!</span>
+        <span>Time</span><span>X</span><span>Y</span><span>Z</span><span>fX</span><span>fY</span><span>fZ</span><span>!</span>
       </div>
       <div class="log-body" id="logBody">
         <div data-ph style="padding:16px;text-align:center;font-size:11px;color:var(--muted)" id="logPlaceholder">Log starts above <span id="logThreshLabel">80</span> km/h</div>
@@ -542,6 +543,88 @@ function attachMotion() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// Band-Pass Filter — 0.4 Hz to 10 Hz, 2nd-order Butterworth
+// Sample rate: 5 Hz (one reading every 200 ms)
+//
+// Design: two cascaded biquad sections (high-pass at 0.4 Hz,
+// low-pass at 10 Hz), coefficients derived via bilinear transform.
+// ISO 2631-1 targets the 0.5–16 Hz range for whole-body vibration;
+// 0.4–10 Hz captures the frequencies most perceptible to humans
+// seated in a railway vehicle.
+//
+// Each axis carries its own independent filter state so X, Y, Z
+// are filtered separately without cross-contamination.
+// ═══════════════════════════════════════════════════════════
+
+const FS = 5.0;  // sample rate Hz (1 reading per 200 ms)
+
+// ── Coefficient calculation ──────────────────────────────────
+// High-pass biquad at f_hp = 0.4 Hz
+function makeHighPassCoeffs(fc, fs) {
+  const wc = 2 * Math.PI * fc / fs;
+  const K  = Math.tan(wc / 2);
+  const norm = 1 / (1 + Math.SQRT2 * K + K * K);
+  return {
+    b0:  norm,
+    b1: -2 * norm,
+    b2:  norm,
+    a1:  2 * (K * K - 1) * norm,
+    a2:  (1 - Math.SQRT2 * K + K * K) * norm
+  };
+}
+
+// Low-pass biquad at f_lp = 10 Hz
+function makeLowPassCoeffs(fc, fs) {
+  const wc = 2 * Math.PI * fc / fs;
+  const K  = Math.tan(wc / 2);
+  const norm = 1 / (1 + Math.SQRT2 * K + K * K);
+  return {
+    b0:  K * K * norm,
+    b1:  2 * K * K * norm,
+    b2:  K * K * norm,
+    a1:  2 * (K * K - 1) * norm,
+    a2:  (1 - Math.SQRT2 * K + K * K) * norm
+  };
+}
+
+const HP = makeHighPassCoeffs(0.4, FS);
+const LP = makeLowPassCoeffs(10.0, FS);
+
+// ── Per-axis filter state (two biquad stages each) ───────────
+function makeBiquadState() {
+  return { x1: 0, x2: 0, y1: 0, y2: 0 };
+}
+
+const filterState = {
+  hp: { x: makeBiquadState(), y: makeBiquadState(), z: makeBiquadState() },
+  lp: { x: makeBiquadState(), y: makeBiquadState(), z: makeBiquadState() }
+};
+
+// ── Apply one biquad section ─────────────────────────────────
+function biquad(coeffs, s, xn) {
+  const yn = coeffs.b0 * xn + coeffs.b1 * s.x1 + coeffs.b2 * s.x2
+                             - coeffs.a1 * s.y1 - coeffs.a2 * s.y2;
+  s.x2 = s.x1; s.x1 = xn;
+  s.y2 = s.y1; s.y1 = yn;
+  return yn;
+}
+
+// ── Filter one sample through HP then LP (band-pass) ─────────
+function bandPass(axis, raw) {
+  const afterHP = biquad(HP, filterState.hp[axis], raw);
+  const afterLP = biquad(LP, filterState.lp[axis], afterHP);
+  return afterLP;
+}
+
+// Reset filter states at session start to avoid DC transients
+function resetFilters() {
+  ['x','y','z'].forEach(ax => {
+    filterState.hp[ax] = makeBiquadState();
+    filterState.lp[ax] = makeBiquadState();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
 // Main tick — 200ms
 // ═══════════════════════════════════════════════════════════
 async function tick() {
@@ -588,6 +671,12 @@ async function tick() {
   if (res > state.peakG) state.peakG = res;
   document.getElementById('peakG').textContent = state.peakG.toFixed(2);
 
+  // Apply band-pass filter (0.4–10 Hz) to each axis
+  const fax = bandPass('x', state.ax);
+  const fay = bandPass('y', state.ay);
+  const faz = bandPass('z', state.az);
+  const fres = Math.sqrt(fax * fax + faz * faz);
+
   const flagged = Date.now() < state.discomfortUntil;
   const now = new Date();
   const row = {
@@ -600,6 +689,10 @@ async function tick() {
     ay: parseFloat(state.ay.toFixed(4)),
     az: parseFloat(state.az.toFixed(4)),
     resultant: parseFloat(res.toFixed(4)),
+    fax: parseFloat(fax.toFixed(4)),
+    fay: parseFloat(fay.toFixed(4)),
+    faz: parseFloat(faz.toFixed(4)),
+    fresultant: parseFloat(fres.toFixed(4)),
     discomfort: flagged ? 1 : 0,
     synced: 0
   };
@@ -673,7 +766,9 @@ function addLogRow(row, flagged) {
     `<span class="log-cell">${row.ax.toFixed(2)}</span>` +
     `<span class="log-cell">${row.ay.toFixed(2)}</span>` +
     `<span class="log-cell">${row.az.toFixed(2)}</span>` +
-    `<span class="log-cell">${row.speed.toFixed(0)}</span>` +
+    `<span class="log-cell filtered">${(row.fax||0).toFixed(2)}</span>` +
+    `<span class="log-cell filtered">${(row.fay||0).toFixed(2)}</span>` +
+    `<span class="log-cell filtered">${(row.faz||0).toFixed(2)}</span>` +
     `<span class="log-cell flag">${flagged ? '!' : ''}</span>`;
   body.insertBefore(div, body.firstChild);
   while (body.children.length > 50) body.removeChild(body.lastChild);
@@ -759,13 +854,19 @@ function updateConnBanner() {
 async function exportCSV() {
   const rows = await dbGetAll();
   if (rows.length === 0) { alert('No data recorded yet.'); return; }
-  const headers = ['id','timestamp','session','lat','lng','speed_kmh','ax_ms2','ay_ms2','az_ms2','resultant_ms2','discomfort','synced'];
+  const headers = [
+    'id','timestamp','session','lat','lng','speed_kmh',
+    'ax_ms2','ay_ms2','az_ms2','resultant_ms2',
+    'fax_ms2 (BP 0.4-10Hz)','fay_ms2 (BP 0.4-10Hz)','faz_ms2 (BP 0.4-10Hz)','fresultant_ms2 (BP 0.4-10Hz)',
+    'discomfort','synced'
+  ];
   const lines = [headers.join(',')];
   rows.forEach(r => {
     lines.push([
       r.id, r.timestamp, '"' + (r.session||'') + '"',
       r.lat||'', r.lng||'', r.speed||'',
       r.ax||'', r.ay||'', r.az||'', r.resultant||'',
+      r.fax||'', r.fay||'', r.faz||'', r.fresultant||'',
       r.discomfort||0, r.synced||0
     ].join(','));
   });
@@ -810,6 +911,7 @@ function toggleSession() {
   if (state.running) {
     state.peakG = 0; state.buffer = [];
     state.sessionStart = Date.now();
+    resetFilters();
     btn.textContent = 'Stop Session';
     btn.className = 'btn danger-btn';
     dot.className = 'session-dot live';
