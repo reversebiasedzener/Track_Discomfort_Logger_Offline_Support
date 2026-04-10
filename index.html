@@ -432,8 +432,8 @@ const cfg={
 const state={
   running:false, paused:false,
   speed:0, lat:null, lng:null, accuracy:null,
-  _rx:0, _ry:0, _rz:0,
-  fax:0, fay:0, faz:0,
+  _rx:0, _ry:0, _rz:0,   // transient — fed to filter, never stored
+  fax:0, fay:0, faz:0,   // filtered output — stored and displayed
   sessionStart:null,
   buffer:[],           // 25-reading rolling window (5 sec at 5 Hz)
   distKm:0, prevLat:null, prevLng:null,
