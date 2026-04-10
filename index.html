@@ -13,230 +13,256 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0a0a14;
-  --surface: #11111e;
-  --surface2: #191928;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.12);
-  --text: #e8e8f0;
-  --muted: #555570;
-  --accent-x: #4f9eff;
-  --accent-y: #2ecc8a;
-  --accent-z: #e06fff;
-  --danger: #ff4444;
-  --danger-dim: rgba(255,68,68,0.12);
-  --warn: #ffb020;
-  --green: #22c55e;
-  --mono: 'JetBrains Mono', monospace;
-  --sans: 'DM Sans', sans-serif;
+  --bg:#0a0a14; --surface:#11111e; --surface2:#191928;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+  --text:#e8e8f0; --muted:#555570;
+  --ax:#4f9eff; --ay:#2ecc8a; --az:#e06fff;
+  --danger:#ff4444; --danger-dim:rgba(255,68,68,0.12);
+  --warn:#ffb020; --green:#22c55e;
+  --mono:'JetBrains Mono',monospace; --sans:'DM Sans',sans-serif;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); overflow: hidden; }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto}
 
-#app { display: flex; flex-direction: column; height: 100dvh; max-width: 480px; margin: 0 auto; }
+/* Topbar */
+.topbar{flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);padding:8px 16px 6px}
+.tb1{display:flex;align-items:center;justify-content:space-between}
+.app-title{font-size:11px;font-weight:500;letter-spacing:0.07em;color:var(--muted);text-transform:uppercase}
+.session-pill{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background 0.3s;flex-shrink:0}
+.sdot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+.sdot.paused{background:var(--warn)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.tb2{margin-top:4px;display:flex;align-items:baseline;gap:8px}
+.spd-val{font-family:var(--mono);font-size:28px;font-weight:600;color:var(--text);transition:color 0.3s}
+.spd-val.active{color:var(--ax)}
+.spd-unit{font-size:12px;color:var(--muted)}
+.thr-status{font-size:11px;color:var(--muted);margin-left:auto}
+.thr-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--muted);margin-right:3px;vertical-align:middle}
+.thr-dot.above{background:var(--green)}
+.track-badge{font-size:10px;color:var(--muted);background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:2px 7px;margin-left:6px}
 
-/* Top bar */
-.topbar { flex-shrink: 0; background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px 8px; }
-.topbar-row1 { display: flex; align-items: center; justify-content: space-between; }
-.app-title { font-size: 12px; font-weight: 500; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; }
-.session-pill { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
-.session-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
-.session-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-.topbar-row2 { margin-top: 6px; display: flex; align-items: baseline; gap: 8px; }
-.speed-val { font-family: var(--mono); font-size: 28px; font-weight: 600; color: var(--text); transition: color 0.3s; }
-.speed-val.active { color: var(--accent-x); }
-.speed-unit { font-size: 12px; color: var(--muted); }
-.thresh-status { font-size: 11px; color: var(--muted); margin-left: auto; }
-.thresh-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); margin-right: 4px; vertical-align: middle; }
-.thresh-dot.above { background: var(--green); }
+/* Strips */
+.rec-strip{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:5px 16px;font-size:11px;border-bottom:1px solid var(--border)}
+.rec-strip.hidden{display:none}
+.rec-strip.waiting{background:rgba(255,176,32,0.06);border-color:rgba(255,176,32,0.15);color:var(--warn)}
+.rec-strip.recording{background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.15);color:var(--green)}
+.rec-strip.paused{background:rgba(255,176,32,0.06);border-color:rgba(255,176,32,0.15);color:var(--warn)}
+.rs-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+.rec-strip.recording .rs-dot{animation:pulse 2s infinite}
+.conn-banner{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:5px 16px;font-size:11px;background:#1a1200;border-bottom:1px solid rgba(255,176,32,0.2);color:var(--warn)}
+.conn-banner.online{background:#0a1a0a;border-color:rgba(34,197,94,0.2);color:var(--green)}
+.conn-banner.hidden{display:none}
+.cb-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 
-/* Connectivity banner */
-.conn-banner { flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 6px 16px; font-size: 11px; background: #1a1200; border-bottom: 1px solid rgba(255,176,32,0.2); color: var(--warn); }
-.conn-banner.online { background: #0a1a0a; border-color: rgba(34,197,94,0.2); color: var(--green); }
-.conn-banner.hidden { display: none; }
-.conn-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.scrollarea{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.scrollarea::-webkit-scrollbar{display:none}
 
-.scrollarea { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-.scrollarea::-webkit-scrollbar { display: none; }
+/* Filtered accel grid */
+.accel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.accel-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 8px;text-align:center;position:relative;overflow:hidden}
+.accel-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.accel-card.cx::before{background:var(--ax)}
+.accel-card.cy::before{background:var(--ay)}
+.accel-card.cz::before{background:var(--az)}
+.a-axis{font-size:9px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:3px}
+.a-val{font-family:var(--mono);font-size:19px;font-weight:600}
+.a-val.cx{color:var(--ax)} .a-val.cy{color:var(--ay)} .a-val.cz{color:var(--az)}
+.a-lbl{font-size:9px;color:var(--muted);margin-top:2px}
+.a-bar{margin-top:5px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.a-bar-fill{height:100%;border-radius:2px;width:0%;transition:width 0.18s}
+.a-bar-fill.cx{background:var(--ax)} .a-bar-fill.cy{background:var(--ay)} .a-bar-fill.cz{background:var(--az)}
 
-/* Accel cards */
-.accel-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.accel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 10px; text-align: center; position: relative; overflow: hidden; }
-.accel-card::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
-.accel-card.cx::before { background: var(--accent-x); }
-.accel-card.cy::before { background: var(--accent-y); }
-.accel-card.cz::before { background: var(--accent-z); }
-.accel-axis { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
-.accel-val { font-family: var(--mono); font-size: 22px; font-weight: 600; transition: color 0.15s; }
-.accel-val.cx { color: var(--accent-x); }
-.accel-val.cy { color: var(--accent-y); }
-.accel-val.cz { color: var(--accent-z); }
-.accel-label { font-size: 9px; color: var(--muted); margin-top: 3px; }
-.accel-bar { margin-top: 8px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
-.accel-bar-fill { height: 100%; border-radius: 2px; width: 0%; transition: width 0.18s; }
-.accel-bar-fill.cx { background: var(--accent-x); }
-.accel-bar-fill.cy { background: var(--accent-y); }
-.accel-bar-fill.cz { background: var(--accent-z); }
-
-/* Resultant */
-.resultant-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
-.resultant-label { font-size: 11px; color: var(--muted); }
-.resultant-val { font-family: var(--mono); font-size: 20px; font-weight: 600; color: var(--text); }
-.resultant-right { margin-left: auto; text-align: right; }
-.peak-label { font-size: 10px; color: var(--muted); }
-.peak-val { font-family: var(--mono); font-size: 13px; color: var(--warn); }
+/* Counts card */
+.counts-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.counts-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.counts-title{font-size:11px;color:var(--muted)}
+.counts-km{font-family:var(--mono);font-size:11px;color:var(--text)}
+.counts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cc{background:var(--surface2);border-radius:8px;padding:8px 5px;text-align:center;border:1px solid transparent;transition:border-color 0.4s,background 0.4s}
+.cc.q-green{border-color:rgba(34,197,94,0.45);background:rgba(34,197,94,0.09)}
+.cc.q-yellow{border-color:rgba(255,176,32,0.45);background:rgba(255,176,32,0.09)}
+.cc.q-red{border-color:rgba(255,68,68,0.45);background:rgba(255,68,68,0.09)}
+.cc-axis{font-size:9px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px}
+.cc-axis.cx{color:var(--ax)} .cc-axis.cy{color:var(--ay)} .cc-axis.cz{color:var(--muted)}
+.cc-val{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--text)}
+.cc-pkm{font-size:9px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
+.cc-qual{font-size:9px;font-weight:500;margin-top:3px;letter-spacing:0.03em}
+.q-green .cc-qual{color:var(--green)} .q-yellow .cc-qual{color:var(--warn)} .q-red .cc-qual{color:var(--danger)}
+.cc-nostd{font-size:9px;color:var(--muted);margin-top:3px;font-style:italic}
 
 /* GPS */
-.gps-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
-.gps-row { display: flex; align-items: center; gap: 10px; }
-.gps-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(79,158,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.gps-info { flex: 1; }
-.gps-coord { font-family: var(--mono); font-size: 11px; color: var(--text); }
-.gps-meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
-.gps-accuracy { font-size: 10px; color: var(--muted); margin-left: auto; text-align: right; }
+.gps-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:9px 14px}
+.gps-row{display:flex;align-items:center;gap:10px}
+.gps-icon{width:28px;height:28px;border-radius:7px;background:rgba(79,158,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.gps-info{flex:1}
+.gps-coord{font-family:var(--mono);font-size:11px;color:var(--text)}
+.gps-meta{font-size:10px;color:var(--muted);margin-top:1px}
+.gps-acc{font-size:10px;color:var(--muted);margin-left:auto;text-align:right}
 
-/* Storage card */
-.storage-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; }
-.storage-row { display: flex; align-items: center; gap: 8px; }
-.storage-icon { font-size: 14px; }
-.storage-info { flex: 1; }
-.storage-label { font-size: 11px; color: var(--text); }
-.storage-sub { font-size: 10px; color: var(--muted); margin-top: 1px; }
-.storage-nums { text-align: right; }
-.storage-num { font-family: var(--mono); font-size: 12px; }
-.storage-num.unsynced { color: var(--warn); }
-.storage-num.synced { color: var(--green); }
-.storage-num-label { font-size: 9px; color: var(--muted); }
-.progress-bar { margin-top: 8px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
-.progress-fill { height: 100%; border-radius: 2px; background: var(--green); transition: width 0.5s; }
+/* Storage */
+.storage-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px 14px}
+.stor-row{display:flex;align-items:center;gap:8px}
+.stor-info{flex:1}
+.stor-label{font-size:11px;color:var(--text)}
+.stor-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.stor-nums{text-align:right}
+.stor-num{font-family:var(--mono);font-size:11px}
+.stor-num.uns{color:var(--warn)} .stor-num.syn{color:var(--green)}
+.stor-numl{font-size:9px;color:var(--muted)}
+.prog-bar{margin-top:6px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;background:var(--green);transition:width 0.5s}
 
-/* Discomfort button */
-.discomfort-btn {
-  width: 100%; padding: 20px 16px; border-radius: 14px;
-  background: var(--danger-dim); border: 1.5px solid var(--danger);
-  color: #ff8080; font-family: var(--sans); font-size: 16px; font-weight: 500;
-  cursor: pointer; text-align: center; letter-spacing: 0.04em;
-  transition: background 0.15s, transform 0.1s;
-  -webkit-user-select: none; user-select: none;
-}
-.discomfort-btn:active { transform: scale(0.97); background: rgba(255,68,68,0.25); }
-.discomfort-btn.fired { animation: flash 0.4s; }
-@keyframes flash { 0%{background:rgba(255,68,68,0.5)} 100%{background:var(--danger-dim)} }
-.discomfort-sub { font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 400; }
+/* Discomfort */
+.disc-btn{width:100%;padding:15px;border-radius:14px;background:var(--danger-dim);border:1.5px solid var(--danger);color:#ff8080;font-family:var(--sans);font-size:15px;font-weight:500;cursor:pointer;text-align:center;letter-spacing:0.04em;transition:background 0.15s,transform 0.1s;-webkit-user-select:none;user-select:none}
+.disc-btn:active{transform:scale(0.97);background:rgba(255,68,68,0.25)}
+.disc-btn.fired{animation:flash 0.4s}
+@keyframes flash{0%{background:rgba(255,68,68,0.5)}100%{background:var(--danger-dim)}}
+.disc-sub{font-size:10px;color:var(--muted);margin-top:3px;font-weight:400}
 
-/* Log table */
-.log-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-.log-header-row { display: grid; grid-template-columns: 68px repeat(6,1fr) 20px; gap: 3px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
-.log-header-row span { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
-.log-body { max-height: 150px; overflow-y: auto; }
-.log-body::-webkit-scrollbar { display: none; }
-.log-row { display: grid; grid-template-columns: 68px repeat(6,1fr) 20px; gap: 3px; padding: 6px 12px; border-bottom: 1px solid var(--border); }
-.log-row:last-child { border-bottom: none; }
-.log-row.flagged { background: rgba(255,68,68,0.05); }
-.log-cell { font-family: var(--mono); font-size: 10px; color: var(--text); }
-.log-cell.time { color: var(--muted); }
-.log-cell.flag { color: var(--danger); font-size: 13px; text-align: center; }
-.log-cell.filtered { color: var(--accent-y); }
+/* Log — filtered only */
+.log-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.log-hdr{display:grid;grid-template-columns:64px repeat(3,1fr) 18px;gap:3px;padding:6px 12px;border-bottom:1px solid var(--border)}
+.log-hdr span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em}
+.log-body{max-height:120px;overflow-y:auto}
+.log-body::-webkit-scrollbar{display:none}
+.log-row{display:grid;grid-template-columns:64px repeat(3,1fr) 18px;gap:3px;padding:5px 12px;border-bottom:1px solid var(--border)}
+.log-row:last-child{border-bottom:none}
+.log-row.flagged{background:rgba(255,68,68,0.06)}
+.log-row.pr{opacity:0.35}
+.lc{font-family:var(--mono);font-size:10px;color:var(--ay)}
+.lc.t{color:var(--muted)} .lc.f{color:var(--danger);font-size:12px;text-align:center}
 
 /* Bottom bar */
-.bottombar { flex-shrink: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 10px 12px 16px; display: flex; gap: 8px; }
-.btn { flex: 1; padding: 11px 6px; border-radius: 10px; border: 1px solid var(--border2); background: transparent; color: var(--text); font-family: var(--sans); font-size: 12px; font-weight: 400; cursor: pointer; transition: background 0.15s; }
-.btn:active { background: var(--surface2); }
-.btn.primary { background: rgba(79,158,255,0.12); border-color: var(--accent-x); color: var(--accent-x); }
-.btn.danger-btn { background: var(--danger-dim); border-color: var(--danger); color: #ff8080; }
+.bottombar{flex-shrink:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 12px 4px;display:flex;gap:6px}
+.btn{flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text);font-family:var(--sans);font-size:11px;font-weight:400;cursor:pointer;transition:background 0.15s}
+.btn:active{background:var(--surface2)}
+.btn.primary{background:rgba(79,158,255,0.12);border-color:var(--ax);color:var(--ax)}
+.btn.danger-btn{background:var(--danger-dim);border-color:var(--danger);color:#ff8080}
+.btn.warn-btn{background:rgba(255,176,32,0.12);border-color:var(--warn);color:var(--warn)}
+.btn.hidden{display:none}
 
-/* Recording status strip — inline, never full-screen */
-.rec-strip { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 7px 16px; font-size: 12px; border-bottom: 1px solid var(--border); background: var(--surface); transition: background 0.3s; }
-.rec-strip.hidden { display: none; }
-.rec-strip.waiting { background: rgba(255,176,32,0.06); border-color: rgba(255,176,32,0.15); color: var(--warn); }
-.rec-strip.recording { background: rgba(34,197,94,0.06); border-color: rgba(34,197,94,0.15); color: var(--green); }
-.rec-strip-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-.rec-strip.recording .rec-strip-dot { animation: pulse 2s infinite; }
+/* Footer */
+.app-footer{flex-shrink:0;text-align:center;font-size:9px;color:var(--muted);padding:3px 0 5px;letter-spacing:0.05em}
 
-/* Config modal */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: flex-end; z-index: 100; }
-.modal-overlay.hidden { display: none; }
-.modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 20px 20px 36px; width: 100%; max-width: 480px; margin: 0 auto; max-height: 90vh; overflow-y: auto; }
-.modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 16px; }
-.field { margin-bottom: 14px; }
-.field label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
-.field input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 12px; color: var(--text); font-family: var(--mono); font-size: 13px; outline: none; }
-.field input:focus { border-color: var(--accent-x); }
-.field small { font-size: 10px; color: var(--muted); margin-top: 4px; display: block; line-height: 1.5; }
-.modal-btns { display: flex; gap: 8px; margin-top: 20px; }
-.modal-section { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 18px 0 10px; border-top: 1px solid var(--border); padding-top: 14px; }
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:flex-end;z-index:100}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:20px 20px 36px;width:100%;max-width:480px;margin:0 auto;max-height:92vh;overflow-y:auto}
+.modal h2{font-size:16px;font-weight:500;margin-bottom:4px}
+.modal-sub{font-size:11px;color:var(--muted);margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
+.field input,.field select{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;-webkit-appearance:none}
+.field input:focus,.field select:focus{border-color:var(--ax)}
+.field select option{background:var(--surface2)}
+.field small{font-size:10px;color:var(--muted);margin-top:4px;display:block;line-height:1.5}
+.modal-sec{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 10px;border-top:1px solid var(--border);padding-top:12px}
+.modal-btns{display:flex;gap:8px;margin-top:16px}
+
+/* Pre-session */
+.ps-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.ps-overlay.hidden{display:none}
+.ps-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:22px;width:100%;max-width:380px}
+.ps-card h2{font-size:17px;font-weight:500;margin-bottom:4px}
+.ps-card p{font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6}
+.tc-btns{display:flex;gap:10px;margin-bottom:18px}
+.tc-btn{flex:1;padding:14px 8px;border-radius:10px;border:1.5px solid var(--border2);background:transparent;color:var(--text);font-family:var(--sans);font-size:13px;cursor:pointer;text-align:center;transition:all 0.15s;line-height:1.4}
+.tc-btn .tc-sp{font-size:10px;color:var(--muted);margin-top:4px;display:block}
+.tc-btn.selected{border-color:var(--ax);background:rgba(79,158,255,0.1);color:var(--ax)}
+.tc-btn.selected .tc-sp{color:rgba(79,158,255,0.7)}
 </style>
 </head>
 <body>
 <div id="app">
 
   <div class="topbar">
-    <div class="topbar-row1">
+    <div class="tb1">
       <span class="app-title">Track Ride Monitor</span>
       <div class="session-pill">
-        <div class="session-dot" id="sessionDot"></div>
+        <div class="sdot" id="sessionDot"></div>
         <span id="sessionLabel">Not recording</span>
       </div>
     </div>
-    <div class="topbar-row2">
-      <span class="speed-val" id="speedDisplay">0.0</span>
-      <span class="speed-unit">km/h</span>
-      <span class="thresh-status">
-        <span class="thresh-dot" id="threshDot"></span>
+    <div class="tb2">
+      <span class="spd-val" id="speedDisplay">0.0</span>
+      <span class="spd-unit">km/h</span>
+      <span class="thr-status">
+        <span class="thr-dot" id="threshDot"></span>
         <span id="threshLabel">Below 80 km/h</span>
       </span>
+      <span class="track-badge" id="trackBadge">—</span>
     </div>
   </div>
 
   <div class="rec-strip hidden" id="recStrip">
-    <div class="rec-strip-dot"></div>
+    <div class="rs-dot"></div>
     <span id="recStripText">—</span>
   </div>
 
   <div class="conn-banner hidden" id="connBanner">
-    <div class="conn-dot"></div>
+    <div class="cb-dot"></div>
     <span id="connText">Offline — data saving locally</span>
   </div>
 
   <div class="scrollarea">
 
+    <!-- Filtered accel display (req #3 — filtered values only) -->
     <div class="accel-grid">
       <div class="accel-card cx">
-        <div class="accel-axis">X — Lateral</div>
-        <div class="accel-val cx" id="ax">0.00</div>
-        <div class="accel-label">m/s² (sway)</div>
-        <div class="accel-bar"><div class="accel-bar-fill cx" id="barX"></div></div>
+        <div class="a-axis">fX Lateral</div>
+        <div class="a-val cx" id="ax">0.000</div>
+        <div class="a-lbl">m/s² (0.4–10 Hz)</div>
+        <div class="a-bar"><div class="a-bar-fill cx" id="barX"></div></div>
       </div>
       <div class="accel-card cy">
-        <div class="accel-axis">Y — Vertical</div>
-        <div class="accel-val cy" id="ay">9.81</div>
-        <div class="accel-label">m/s² (bounce)</div>
-        <div class="accel-bar"><div class="accel-bar-fill cy" id="barY"></div></div>
+        <div class="a-axis">fY Vertical</div>
+        <div class="a-val cy" id="ay">0.000</div>
+        <div class="a-lbl">m/s² (0.4–10 Hz)</div>
+        <div class="a-bar"><div class="a-bar-fill cy" id="barY"></div></div>
       </div>
       <div class="accel-card cz">
-        <div class="accel-axis">Z — Longit.</div>
-        <div class="accel-val cz" id="az">0.00</div>
-        <div class="accel-label">m/s² (jerk)</div>
-        <div class="accel-bar"><div class="accel-bar-fill cz" id="barZ"></div></div>
+        <div class="a-axis">fZ Longit.</div>
+        <div class="a-val cz" id="az">0.000</div>
+        <div class="a-lbl">m/s² (0.4–10 Hz)</div>
+        <div class="a-bar"><div class="a-bar-fill cz" id="barZ"></div></div>
       </div>
     </div>
 
-    <div class="resultant-card">
-      <div>
-        <div class="resultant-label">Resultant (XZ plane)</div>
-        <div class="resultant-val" id="resultant">0.00 m/s²</div>
+    <!-- Counts with quality colouring (req #2, #6) -->
+    <div class="counts-card">
+      <div class="counts-hdr">
+        <span class="counts-title" id="countsTitle">Exceedances — select track class</span>
+        <span class="counts-km" id="kmDisplay">0.00 km</span>
       </div>
-      <div class="resultant-right">
-        <div class="peak-label">Session peak</div>
-        <div class="peak-val" id="peakG">0.00</div>
+      <div class="counts-grid">
+        <div class="cc" id="cellX">
+          <div class="cc-axis cx">fX Lateral</div>
+          <div class="cc-val" id="cntX">0</div>
+          <div class="cc-pkm" id="pkmX">—/km</div>
+          <div class="cc-qual" id="qualX">—</div>
+        </div>
+        <div class="cc" id="cellY">
+          <div class="cc-axis cy">fY Vertical</div>
+          <div class="cc-val" id="cntY">0</div>
+          <div class="cc-pkm" id="pkmY">—/km</div>
+          <div class="cc-qual" id="qualY">—</div>
+        </div>
+        <div class="cc" id="cellZ">
+          <div class="cc-axis cz">fZ Longit.</div>
+          <div class="cc-val" id="cntZ">0</div>
+          <div class="cc-pkm" id="pkmZ">—/km</div>
+          <div class="cc-nostd">No IR standard</div>
+        </div>
       </div>
     </div>
 
+    <!-- GPS -->
     <div class="gps-card">
       <div class="gps-row">
         <div class="gps-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#4f9eff">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#4f9eff">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
           </svg>
         </div>
@@ -244,721 +270,565 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
           <div class="gps-coord" id="gpsCoord">Acquiring GPS…</div>
           <div class="gps-meta" id="gpsMeta">—</div>
         </div>
-        <div class="gps-accuracy" id="gpsAcc">±— m</div>
+        <div class="gps-acc" id="gpsAcc">±— m</div>
       </div>
     </div>
 
+    <!-- Storage -->
     <div class="storage-card">
-      <div class="storage-row">
-        <span class="storage-icon">💾</span>
-        <div class="storage-info">
-          <div class="storage-label">Local storage</div>
-          <div class="storage-sub" id="storageStatus">Initialising…</div>
+      <div class="stor-row">
+        <span style="font-size:13px">💾</span>
+        <div class="stor-info">
+          <div class="stor-label">Local storage</div>
+          <div class="stor-sub" id="storageStatus">Initialising…</div>
         </div>
-        <div class="storage-nums">
-          <div class="storage-num unsynced" id="unsyncedCount">— pending</div>
-          <div class="storage-num-label">unsynced</div>
-          <div class="storage-num synced" id="syncedCount">— synced</div>
-          <div class="storage-num-label">in Sheets</div>
+        <div class="stor-nums">
+          <div class="stor-num uns" id="unsyncedCount">— pending</div>
+          <div class="stor-numl">unsynced</div>
+          <div class="stor-num syn" id="syncedCount">— synced</div>
+          <div class="stor-numl">in Sheets</div>
         </div>
       </div>
-      <div class="progress-bar">
-        <div class="progress-fill" id="syncProgress" style="width:0%"></div>
-      </div>
+      <div class="prog-bar"><div class="prog-fill" id="syncProgress" style="width:0%"></div></div>
     </div>
 
+    <!-- Discomfort (req #8 — ±5 sec window) -->
     <div>
-      <button class="discomfort-btn" id="discomfortBtn" onclick="markDiscomfort()">
+      <button class="disc-btn" id="discomfortBtn" onclick="markDiscomfort()">
         ⚠ MARK DISCOMFORT
-        <div class="discomfort-sub">Flags ±5 second window • saves locally regardless of connectivity</div>
+        <div class="disc-sub">Saves ±5 sec filtered window (25 readings before + 25 after) with GPS location</div>
       </button>
     </div>
 
+    <!-- Log — filtered values only (req #3) -->
     <div class="log-card">
-      <div class="log-header-row">
-        <span>Time</span><span>X</span><span>Y</span><span>Z</span><span>fX</span><span>fY</span><span>fZ</span><span>!</span>
+      <div class="log-hdr">
+        <span>Time</span><span>fX</span><span>fY</span><span>fZ</span><span>!</span>
       </div>
       <div class="log-body" id="logBody">
-        <div data-ph style="padding:16px;text-align:center;font-size:11px;color:var(--muted)" id="logPlaceholder">Log starts above <span id="logThreshLabel">80</span> km/h</div>
+        <div data-ph style="padding:14px;text-align:center;font-size:11px;color:var(--muted)">
+          Log starts above <span id="logThreshLabel">80</span> km/h
+        </div>
       </div>
     </div>
 
   </div>
 
+  <!-- Bottom bar (req #9 — pause button, footer) -->
   <div class="bottombar">
     <button class="btn" onclick="showConfig()">⚙ Setup</button>
     <button class="btn primary" id="sessionBtn" onclick="toggleSession()">Start Session</button>
+    <button class="btn warn-btn hidden" id="pauseBtn" onclick="togglePause()">⏸ Pause</button>
     <button class="btn" onclick="exportCSV()">↓ CSV</button>
+  </div>
+  <div class="app-footer">Solapur Division, Central Railway</div>
+
+</div>
+
+<!-- Pre-session screen (req #4) -->
+<div class="ps-overlay hidden" id="psOverlay">
+  <div class="ps-card">
+    <h2>New Session</h2>
+    <p>Select the track class to apply the correct exceedance threshold and quality standards.</p>
+    <div class="tc-btns">
+      <button class="tc-btn" id="tcBtn110" onclick="selectTC('110')">
+        Up to 110 km/h
+        <span class="tc-sp">Threshold: 1.96 m/s² (0.2g)</span>
+      </button>
+      <button class="tc-btn" id="tcBtn160" onclick="selectTC('160')">
+        Above 110 km/h
+        <span class="tc-sp">Threshold: 1.47 m/s² (0.15g)</span>
+      </button>
+    </div>
+    <div class="field">
+      <label>Session / Run Name</label>
+      <input type="text" id="psName" placeholder="e.g. Solapur–Pune 15-Jan Run 1">
+    </div>
+    <button class="btn primary" style="width:100%;padding:13px;margin-top:8px" onclick="confirmPS()">Confirm &amp; Start</button>
   </div>
 </div>
 
-
-
-<!-- Config modal -->
+<!-- Config modal (req #5 — overridable thresholds) -->
 <div class="modal-overlay hidden" id="configModal">
   <div class="modal">
     <h2>Configuration</h2>
+    <div class="modal-sub">Settings persist across sessions</div>
 
+    <div class="modal-sec">Recording</div>
     <div class="field">
-      <label>Session / Run Name</label>
-      <input type="text" id="cfgSession" placeholder="e.g. Delhi–Agra 2025-01-15 Run 1">
-    </div>
-    <div class="field">
-      <label>Speed threshold (km/h)</label>
-      <input type="number" id="cfgThreshold" value="80" min="10" max="200">
+      <label>Minimum speed for recording (km/h)</label>
+      <input type="number" id="cfgThreshold" value="80" min="10" max="250">
     </div>
 
-    <div class="modal-section">Google Sheets sync (optional)</div>
+    <div class="modal-sec">Exceedance thresholds</div>
+    <div class="field">
+      <label>Lateral &amp; Vertical — track ≤110 km/h (m/s²)</label>
+      <input type="number" id="cfgT110" value="1.96" step="0.01" min="0.1" max="20">
+      <small>Indian Railways standard: 1.96 m/s² (0.2g). Override if your division maintains different tolerances.</small>
+    </div>
+    <div class="field">
+      <label>Lateral &amp; Vertical — track &gt;110 km/h (m/s²)</label>
+      <input type="number" id="cfgT160" value="1.47" step="0.01" min="0.1" max="20">
+      <small>Indian Railways standard: 1.47 m/s² (0.15g). Override if your division maintains different tolerances.</small>
+    </div>
+
+    <div class="modal-sec">Google Sheets sync (optional)</div>
     <div class="field">
       <label>Apps Script Web App URL</label>
       <input type="url" id="cfgUrl" placeholder="https://script.google.com/macros/s/…/exec">
-      <small>Leave blank to use offline-only mode. Data is always saved locally first — this URL is only used for background sync when connected.</small>
+      <small>Leave blank for offline-only. Data saves locally first, syncs when connected.</small>
     </div>
 
-    <div class="modal-section">Local data</div>
+    <div class="modal-sec">Local data</div>
     <div style="display:flex;gap:8px;margin-bottom:8px">
       <button class="btn" onclick="manualSync()" style="flex:1">Sync now</button>
-      <button class="btn" onclick="clearSyncedRows()" style="flex:1">Clear synced rows</button>
+      <button class="btn" onclick="clearSyncedRows()" style="flex:1">Clear synced</button>
     </div>
-    <div style="font-size:10px;color:var(--muted);line-height:1.5">
-      "Sync now" pushes all unsynced rows to Sheets immediately (requires connectivity).<br>
-      "Clear synced rows" removes already-uploaded rows from local storage to free space.
-    </div>
+    <div style="font-size:10px;color:var(--muted);line-height:1.5">"Sync now" pushes unsynced rows to Sheets. "Clear synced" frees device storage.</div>
 
     <div class="modal-btns">
       <button class="btn" onclick="closeConfig()">Cancel</button>
-      <button class="btn primary" onclick="saveConfig()">Save & Close</button>
+      <button class="btn primary" onclick="saveConfig()">Save &amp; Close</button>
     </div>
   </div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════
-// IndexedDB setup
-// ═══════════════════════════════════════════════════════════
-const DB_NAME = 'TrackRideDB';
-const DB_VER  = 1;
-const STORE   = 'readings';
-let db = null;
+// ═══ IndexedDB ════════════════════════════════════════════════
+const DB_NAME='TrackRideDB', DB_VER=1, STORE='readings';
+let db=null;
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(STORE)){const s=d.createObjectStore(STORE,{keyPath:'id',autoIncrement:true});s.createIndex('synced','synced',{unique:false});s.createIndex('session','session',{unique:false})}};r.onsuccess=e=>{db=e.target.result;res(db)};r.onerror=e=>rej(e.target.error)})}
+function dbAdd(row){return new Promise((res,rej)=>{if(!db)return rej('DB not ready');const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).add(row);tx.oncomplete=res;tx.onerror=e=>rej(e.target.error)})}
+function dbPut(row){return new Promise((res,rej)=>{if(!db)return rej('DB not ready');const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(row);tx.oncomplete=res;tx.onerror=e=>rej(e.target.error)})}
+function dbGetUnsynced(limit){return new Promise((res,rej)=>{if(!db)return res([]);const tx=db.transaction(STORE,'readonly'),rows=[];tx.objectStore(STORE).index('synced').openCursor(IDBKeyRange.only(0)).onsuccess=e=>{const c=e.target.result;if(c&&rows.length<limit){rows.push(c.value);c.continue()}else res(rows)};tx.onerror=e=>rej(e.target.error)})}
+function dbMarkSynced(ids){return new Promise((res,rej)=>{if(!db||!ids.length)return res();const tx=db.transaction(STORE,'readwrite'),s=tx.objectStore(STORE);ids.forEach(id=>{const r=s.get(id);r.onsuccess=e=>{const row=e.target.result;if(row){row.synced=1;s.put(row)}}});tx.oncomplete=res;tx.onerror=e=>rej(e.target.error)})}
+function dbCounts(){return new Promise(res=>{if(!db)return res({unsynced:0,synced:0});const tx=db.transaction(STORE,'readonly'),idx=tx.objectStore(STORE).index('synced');let u=0,s=0;idx.count(IDBKeyRange.only(0)).onsuccess=e=>{u=e.target.result};idx.count(IDBKeyRange.only(1)).onsuccess=e=>{s=e.target.result};tx.oncomplete=()=>res({unsynced:u,synced:s})})}
+function dbDeleteSynced(){return new Promise((res,rej)=>{if(!db)return res();const tx=db.transaction(STORE,'readwrite'),s=tx.objectStore(STORE);s.index('synced').openCursor(IDBKeyRange.only(1)).onsuccess=e=>{const c=e.target.result;if(c){c.delete();c.continue()}};tx.oncomplete=res;tx.onerror=e=>rej(e.target.error)})}
+function dbGetAll(){return new Promise((res,rej)=>{if(!db)return res([]);const tx=db.transaction(STORE,'readonly'),rows=[];tx.objectStore(STORE).openCursor().onsuccess=e=>{const c=e.target.result;if(c){rows.push(c.value);c.continue()}else res(rows)};tx.onerror=e=>rej(e.target.error)})}
 
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VER);
-    req.onupgradeneeded = e => {
-      const d = e.target.result;
-      if (!d.objectStoreNames.contains(STORE)) {
-        const store = d.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
-        store.createIndex('synced', 'synced', { unique: false });
-        store.createIndex('session', 'session', { unique: false });
-      }
-    };
-    req.onsuccess = e => { db = e.target.result; resolve(db); };
-    req.onerror   = e => reject(e.target.error);
-  });
+// ═══ Quality standards (from uploaded markdown) ═══════════════
+// ≤110 km/h: threshold 1.96 m/s²  green <1.5/km  yellow 1.5-3/km  red >3/km
+// >110 km/h: threshold 1.47 m/s²  green <1/km    yellow 1-2/km    red >2/km
+function getQC(pkm,tc){
+  if(pkm===null)return'';
+  if(tc==='110'){if(pkm<1.5)return'q-green';if(pkm<=3)return'q-yellow';return'q-red'}
+  else{if(pkm<1)return'q-green';if(pkm<=2)return'q-yellow';return'q-red'}
+}
+function getQL(pkm,tc){
+  if(pkm===null)return'<1 km';
+  if(tc==='110'){if(pkm<1.5)return'Very Good';if(pkm<=3)return'Good';return'Average'}
+  else{if(pkm<1)return'Very Good';if(pkm<=2)return'Good';return'Average'}
 }
 
-function dbAdd(row) {
-  return new Promise((resolve, reject) => {
-    if (!db) return reject('DB not ready');
-    const tx = db.transaction(STORE, 'readwrite');
-    tx.objectStore(STORE).add(row);
-    tx.oncomplete = resolve;
-    tx.onerror = e => reject(e.target.error);
-  });
-}
-
-function dbGetUnsynced(limit) {
-  return new Promise((resolve, reject) => {
-    if (!db) return resolve([]);
-    const tx = db.transaction(STORE, 'readonly');
-    const idx = tx.objectStore(STORE).index('synced');
-    const rows = [];
-    idx.openCursor(IDBKeyRange.only(0)).onsuccess = e => {
-      const cursor = e.target.result;
-      if (cursor && rows.length < limit) { rows.push(cursor.value); cursor.continue(); }
-      else resolve(rows);
-    };
-    tx.onerror = e => reject(e.target.error);
-  });
-}
-
-function dbMarkSynced(ids) {
-  return new Promise((resolve, reject) => {
-    if (!db || ids.length === 0) return resolve();
-    const tx = db.transaction(STORE, 'readwrite');
-    const store = tx.objectStore(STORE);
-    ids.forEach(id => {
-      const req = store.get(id);
-      req.onsuccess = e => {
-        const r = e.target.result;
-        if (r) { r.synced = 1; store.put(r); }
-      };
-    });
-    tx.oncomplete = resolve;
-    tx.onerror = e => reject(e.target.error);
-  });
-}
-
-function dbCounts() {
-  return new Promise((resolve) => {
-    if (!db) return resolve({ unsynced: 0, synced: 0 });
-    const tx = db.transaction(STORE, 'readonly');
-    const store = tx.objectStore(STORE);
-    const idx = store.index('synced');
-    let unsynced = 0, synced = 0;
-    idx.count(IDBKeyRange.only(0)).onsuccess = e => { unsynced = e.target.result; };
-    idx.count(IDBKeyRange.only(1)).onsuccess = e => { synced = e.target.result; };
-    tx.oncomplete = () => resolve({ unsynced, synced });
-  });
-}
-
-function dbDeleteSynced() {
-  return new Promise((resolve, reject) => {
-    if (!db) return resolve();
-    const tx = db.transaction(STORE, 'readwrite');
-    const store = tx.objectStore(STORE);
-    const idx = store.index('synced');
-    idx.openCursor(IDBKeyRange.only(1)).onsuccess = e => {
-      const cursor = e.target.result;
-      if (cursor) { cursor.delete(); cursor.continue(); }
-    };
-    tx.oncomplete = resolve;
-    tx.onerror = e => reject(e.target.error);
-  });
-}
-
-function dbGetAllUnsynced() {
-  return new Promise((resolve, reject) => {
-    if (!db) return resolve([]);
-    const tx = db.transaction(STORE, 'readonly');
-    const rows = [];
-    tx.objectStore(STORE).index('synced').openCursor(IDBKeyRange.only(0)).onsuccess = e => {
-      const cursor = e.target.result;
-      if (cursor) { rows.push(cursor.value); cursor.continue(); }
-      else resolve(rows);
-    };
-    tx.onerror = e => reject(e.target.error);
-  });
-}
-
-function dbGetAll() {
-  return new Promise((resolve, reject) => {
-    if (!db) return resolve([]);
-    const tx = db.transaction(STORE, 'readonly');
-    const rows = [];
-    tx.objectStore(STORE).openCursor().onsuccess = e => {
-      const cursor = e.target.result;
-      if (cursor) { rows.push(cursor.value); cursor.continue(); }
-      else resolve(rows);
-    };
-    tx.onerror = e => reject(e.target.error);
-  });
-}
-
-// ═══════════════════════════════════════════════════════════
-// App state
-// ═══════════════════════════════════════════════════════════
-const cfg = {
-  sheetsUrl: localStorage.getItem('sheetsUrl') || '',
-  sessionName: localStorage.getItem('sessionName') || 'Session 1',
-  threshold: parseFloat(localStorage.getItem('threshold') || '80'),
+// ═══ Config & state ═══════════════════════════════════════════
+const cfg={
+  sheetsUrl: localStorage.getItem('sheetsUrl')||'',
+  sessionName: localStorage.getItem('sessionName')||'Session 1',
+  threshold: parseFloat(localStorage.getItem('threshold')||'80'),
+  thresh110: parseFloat(localStorage.getItem('thresh110')||'1.96'),
+  thresh160: parseFloat(localStorage.getItem('thresh160')||'1.47'),
+  trackClass: localStorage.getItem('trackClass')||'110',
+};
+const state={
+  running:false, paused:false,
+  speed:0, lat:null, lng:null, accuracy:null,
+  _rx:0, _ry:0, _rz:0,
+  fax:0, fay:0, faz:0,
+  sessionStart:null,
+  buffer:[],           // 25-reading rolling window (5 sec at 5 Hz)
+  distKm:0, prevLat:null, prevLng:null,
+  cntX:0, cntY:0, cntZ:0,
+  discomfortUntil:0,
+  online:navigator.onLine, syncing:false, wakeLock:null,
 };
 
-const state = {
-  running: false,
-  speed: 0, lat: null, lng: null, accuracy: null,
-  ax: 0, ay: 9.81, az: 0,
-  peakG: 0,
-  sessionStart: null,
-  buffer: [],           // rolling 2s buffer (10 readings)
-  discomfortUntil: 0,
-  online: navigator.onLine,
-  syncing: false,
-  wakeLock: null,
-};
-
-// ═══════════════════════════════════════════════════════════
-// Init
-// ═══════════════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', async () => {
+// ═══ Init ═════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',async()=>{
   await openDB();
   updateStorageUI();
   startGPS();
   requestMotionPermission();
-  setInterval(tick, 200);
-  setInterval(backgroundSync, 5000);
-  setInterval(updateStorageUI, 4000);
+  setInterval(tick,200);
+  setInterval(backgroundSync,5000);
+  setInterval(updateStorageUI,4000);
   updateConnBanner();
-  document.getElementById('cfgUrl').value = cfg.sheetsUrl;
-  document.getElementById('cfgSession').value = cfg.sessionName;
-  document.getElementById('cfgThreshold').value = cfg.threshold;
-  const tl = document.getElementById('logThreshLabel');
-  if (tl) tl.textContent = cfg.threshold;
+  document.getElementById('cfgUrl').value=cfg.sheetsUrl;
+  document.getElementById('cfgThreshold').value=cfg.threshold;
+  document.getElementById('cfgT110').value=cfg.thresh110;
+  document.getElementById('cfgT160').value=cfg.thresh160;
+  const tl=document.getElementById('logThreshLabel');
+  if(tl)tl.textContent=cfg.threshold;
+  updateTrackBadge();
+  updateCountsTitle();
 });
+window.addEventListener('online',()=>{state.online=true;updateConnBanner();backgroundSync()});
+window.addEventListener('offline',()=>{state.online=false;updateConnBanner()});
 
-window.addEventListener('online',  () => { state.online = true;  updateConnBanner(); backgroundSync(); });
-window.addEventListener('offline', () => { state.online = false; updateConnBanner(); });
-
-// ═══════════════════════════════════════════════════════════
-// GPS
-// ═══════════════════════════════════════════════════════════
-function startGPS() {
-  if (!navigator.geolocation) { document.getElementById('gpsCoord').textContent = 'GPS not available'; return; }
-  navigator.geolocation.watchPosition(pos => {
-    state.lat = pos.coords.latitude;
-    state.lng = pos.coords.longitude;
-    state.accuracy = pos.coords.accuracy;
-    const s = pos.coords.speed;
-    state.speed = (s !== null && s >= 0) ? s * 3.6 : state.speed;
-    document.getElementById('gpsCoord').textContent =
-      state.lat.toFixed(5) + '° N,  ' + state.lng.toFixed(5) + '° E';
-    document.getElementById('gpsMeta').textContent = state.speed.toFixed(1) + ' km/h GPS';
-    document.getElementById('gpsAcc').textContent = '±' + Math.round(state.accuracy || 0) + ' m';
-  }, err => {
-    document.getElementById('gpsCoord').textContent = 'GPS: ' + err.message;
-  }, { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 });
+// ═══ GPS ══════════════════════════════════════════════════════
+function startGPS(){
+  if(!navigator.geolocation){document.getElementById('gpsCoord').textContent='GPS not available';return}
+  navigator.geolocation.watchPosition(pos=>{
+    state.lat=pos.coords.latitude; state.lng=pos.coords.longitude; state.accuracy=pos.coords.accuracy;
+    const s=pos.coords.speed;
+    state.speed=(s!==null&&s>=0)?s*3.6:state.speed;
+    document.getElementById('gpsCoord').textContent=state.lat.toFixed(5)+'° N,  '+state.lng.toFixed(5)+'° E';
+    document.getElementById('gpsMeta').textContent=state.speed.toFixed(1)+' km/h GPS';
+    document.getElementById('gpsAcc').textContent='±'+Math.round(state.accuracy||0)+' m';
+  },err=>{document.getElementById('gpsCoord').textContent='GPS: '+err.message},
+  {enableHighAccuracy:true,maximumAge:500,timeout:10000});
+}
+function haversineKm(a,b,c,d){
+  const R=6371,dL=(c-a)*Math.PI/180,dG=(d-b)*Math.PI/180;
+  const x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dG/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
 }
 
-// ═══════════════════════════════════════════════════════════
-// Motion
-// ═══════════════════════════════════════════════════════════
-async function requestMotionPermission() {
-  if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-    try {
-      const r = await DeviceMotionEvent.requestPermission();
-      if (r === 'granted') attachMotion();
-    } catch(e) {}
-  } else {
-    attachMotion();
-  }
+// ═══ Motion ═══════════════════════════════════════════════════
+async function requestMotionPermission(){
+  if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
+    try{const r=await DeviceMotionEvent.requestPermission();if(r==='granted')attachMotion()}catch(e){}
+  }else attachMotion();
 }
-function attachMotion() {
-  window.addEventListener('devicemotion', e => {
-    const a = e.accelerationIncludingGravity || e.acceleration;
-    if (!a) return;
-    state.ax = a.x || 0;
-    state.ay = a.y || 0;
-    state.az = a.z || 0;
-  }, true);
+function attachMotion(){
+  window.addEventListener('devicemotion',e=>{
+    const a=e.accelerationIncludingGravity||e.acceleration;
+    if(!a)return; state._rx=a.x||0; state._ry=a.y||0; state._rz=a.z||0;
+  },true);
 }
 
-// ═══════════════════════════════════════════════════════════
-// Band-Pass Filter — 0.4 Hz to 10 Hz, 2nd-order Butterworth
-// Sample rate: 5 Hz (one reading every 200 ms)
-//
-// Design: two cascaded biquad sections (high-pass at 0.4 Hz,
-// low-pass at 10 Hz), coefficients derived via bilinear transform.
-// ISO 2631-1 targets the 0.5–16 Hz range for whole-body vibration;
-// 0.4–10 Hz captures the frequencies most perceptible to humans
-// seated in a railway vehicle.
-//
-// Each axis carries its own independent filter state so X, Y, Z
-// are filtered separately without cross-contamination.
-// ═══════════════════════════════════════════════════════════
+// ═══ Band-pass 0.4–10 Hz, 2nd-order Butterworth ══════════════
+const FS=5.0;
+function mkHP(fc,fs){const K=Math.tan(Math.PI*fc/fs),n=1/(1+Math.SQRT2*K+K*K);return{b0:n,b1:-2*n,b2:n,a1:2*(K*K-1)*n,a2:(1-Math.SQRT2*K+K*K)*n}}
+function mkLP(fc,fs){const K=Math.tan(Math.PI*fc/fs),n=1/(1+Math.SQRT2*K+K*K);return{b0:K*K*n,b1:2*K*K*n,b2:K*K*n,a1:2*(K*K-1)*n,a2:(1-Math.SQRT2*K+K*K)*n}}
+const HP=mkHP(0.4,FS),LP=mkLP(10.0,FS);
+function mkBQ(){return{x1:0,x2:0,y1:0,y2:0}}
+const fst={hp:{x:mkBQ(),y:mkBQ(),z:mkBQ()},lp:{x:mkBQ(),y:mkBQ(),z:mkBQ()}};
+function bq(c,s,xn){const yn=c.b0*xn+c.b1*s.x1+c.b2*s.x2-c.a1*s.y1-c.a2*s.y2;s.x2=s.x1;s.x1=xn;s.y2=s.y1;s.y1=yn;return yn}
+function BP(ax,raw){return bq(LP,fst.lp[ax],bq(HP,fst.hp[ax],raw))}
+function resetFilters(){['x','y','z'].forEach(a=>{fst.hp[a]=mkBQ();fst.lp[a]=mkBQ()})}
 
-const FS = 5.0;  // sample rate Hz (1 reading per 200 ms)
-
-// ── Coefficient calculation ──────────────────────────────────
-// High-pass biquad at f_hp = 0.4 Hz
-function makeHighPassCoeffs(fc, fs) {
-  const wc = 2 * Math.PI * fc / fs;
-  const K  = Math.tan(wc / 2);
-  const norm = 1 / (1 + Math.SQRT2 * K + K * K);
-  return {
-    b0:  norm,
-    b1: -2 * norm,
-    b2:  norm,
-    a1:  2 * (K * K - 1) * norm,
-    a2:  (1 - Math.SQRT2 * K + K * K) * norm
-  };
-}
-
-// Low-pass biquad at f_lp = 10 Hz
-function makeLowPassCoeffs(fc, fs) {
-  const wc = 2 * Math.PI * fc / fs;
-  const K  = Math.tan(wc / 2);
-  const norm = 1 / (1 + Math.SQRT2 * K + K * K);
-  return {
-    b0:  K * K * norm,
-    b1:  2 * K * K * norm,
-    b2:  K * K * norm,
-    a1:  2 * (K * K - 1) * norm,
-    a2:  (1 - Math.SQRT2 * K + K * K) * norm
-  };
-}
-
-const HP = makeHighPassCoeffs(0.4, FS);
-const LP = makeLowPassCoeffs(10.0, FS);
-
-// ── Per-axis filter state (two biquad stages each) ───────────
-function makeBiquadState() {
-  return { x1: 0, x2: 0, y1: 0, y2: 0 };
-}
-
-const filterState = {
-  hp: { x: makeBiquadState(), y: makeBiquadState(), z: makeBiquadState() },
-  lp: { x: makeBiquadState(), y: makeBiquadState(), z: makeBiquadState() }
-};
-
-// ── Apply one biquad section ─────────────────────────────────
-function biquad(coeffs, s, xn) {
-  const yn = coeffs.b0 * xn + coeffs.b1 * s.x1 + coeffs.b2 * s.x2
-                             - coeffs.a1 * s.y1 - coeffs.a2 * s.y2;
-  s.x2 = s.x1; s.x1 = xn;
-  s.y2 = s.y1; s.y1 = yn;
-  return yn;
-}
-
-// ── Filter one sample through HP then LP (band-pass) ─────────
-function bandPass(axis, raw) {
-  const afterHP = biquad(HP, filterState.hp[axis], raw);
-  const afterLP = biquad(LP, filterState.lp[axis], afterHP);
-  return afterLP;
-}
-
-// Reset filter states at session start to avoid DC transients
-function resetFilters() {
-  ['x','y','z'].forEach(ax => {
-    filterState.hp[ax] = makeBiquadState();
-    filterState.lp[ax] = makeBiquadState();
-  });
-}
-
-// ═══════════════════════════════════════════════════════════
-// Main tick — 200ms
-// ═══════════════════════════════════════════════════════════
-async function tick() {
-  const spd = state.speed;
-  const above = spd >= cfg.threshold;
+// ═══ Main tick — 200 ms ═══════════════════════════════════════
+async function tick(){
+  const spd=state.speed, above=spd>=cfg.threshold;
 
   // Speed display
-  const sdEl = document.getElementById('speedDisplay');
-  sdEl.textContent = spd.toFixed(1);
-  sdEl.className = 'speed-val' + (above ? ' active' : '');
-  document.getElementById('threshDot').className = 'thresh-dot' + (above ? ' above' : '');
-  document.getElementById('threshLabel').textContent =
-    above ? 'Above ' + cfg.threshold + ' ✓' : 'Below ' + cfg.threshold;
+  const se=document.getElementById('speedDisplay');
+  se.textContent=spd.toFixed(1); se.className='spd-val'+(above?' active':'');
+  document.getElementById('threshDot').className='thr-dot'+(above?' above':'');
+  document.getElementById('threshLabel').textContent=above?'Above '+cfg.threshold+' ✓':'Below '+cfg.threshold;
 
-  // Accel display (always live)
-  document.getElementById('ax').textContent = state.ax.toFixed(2);
-  document.getElementById('ay').textContent = state.ay.toFixed(2);
-  document.getElementById('az').textContent = state.az.toFixed(2);
-  const res = Math.sqrt(state.ax * state.ax + state.az * state.az);
-  document.getElementById('resultant').textContent = res.toFixed(2) + ' m/s²';
-  document.getElementById('barX').style.width = Math.min(100, Math.abs(state.ax) / 3 * 100) + '%';
-  document.getElementById('barY').style.width = Math.min(100, Math.abs(state.ay) / 12 * 100) + '%';
-  document.getElementById('barZ').style.width = Math.min(100, Math.abs(state.az) / 3 * 100) + '%';
+  // Always filter (keeps filter warm) — display filtered values (req #3)
+  const fax=BP('x',state._rx), fay=BP('y',state._ry), faz=BP('z',state._rz);
+  state.fax=fax; state.fay=fay; state.faz=faz;
+  document.getElementById('ax').textContent=fax.toFixed(3);
+  document.getElementById('ay').textContent=fay.toFixed(3);
+  document.getElementById('az').textContent=faz.toFixed(3);
+  document.getElementById('barX').style.width=Math.min(100,Math.abs(fax)/3*100)+'%';
+  document.getElementById('barY').style.width=Math.min(100,Math.abs(fay)/3*100)+'%';
+  document.getElementById('barZ').style.width=Math.min(100,Math.abs(faz)/3*100)+'%';
 
-  // Recording status strip — always visible when session is running
-  const strip = document.getElementById('recStrip');
-  const stripText = document.getElementById('recStripText');
-  if (state.running) {
+  // Recording strip
+  const strip=document.getElementById('recStrip');
+  if(state.running){
     strip.classList.remove('hidden');
-    if (above) {
-      strip.className = 'rec-strip recording';
-      stripText.textContent = 'Recording • ' + spd.toFixed(1) + ' km/h';
-    } else {
-      strip.className = 'rec-strip waiting';
-      stripText.textContent = 'Waiting for ' + cfg.threshold + ' km/h — currently ' + spd.toFixed(1) + ' km/h';
+    if(state.paused){
+      strip.className='rec-strip paused';
+      document.getElementById('recStripText').textContent='Counting paused — data recording • '+spd.toFixed(1)+' km/h';
+    }else if(above){
+      strip.className='rec-strip recording';
+      document.getElementById('recStripText').textContent='Recording • '+spd.toFixed(1)+' km/h • '+state.distKm.toFixed(2)+' km';
+    }else{
+      strip.className='rec-strip waiting';
+      document.getElementById('recStripText').textContent='Waiting for '+cfg.threshold+' km/h — currently '+spd.toFixed(1)+' km/h';
     }
-  } else {
-    strip.classList.add('hidden');
+  }else strip.classList.add('hidden');
+
+  if(!state.running||!above)return;
+
+  // Distance (req #6)
+  if(state.lat!==null&&state.prevLat!==null){
+    const d=haversineKm(state.prevLat,state.prevLng,state.lat,state.lng);
+    if(d<0.2)state.distKm+=d;
   }
+  state.prevLat=state.lat; state.prevLng=state.lng;
+  document.getElementById('kmDisplay').textContent=state.distKm.toFixed(2)+' km';
 
-  if (!state.running || !above) return;
+  // Exceedance counts — suspended when paused (req #7)
+  const excT=cfg.trackClass==='110'?cfg.thresh110:cfg.thresh160;
+  if(!state.paused){
+    if(Math.abs(fax)>excT)state.cntX++;
+    if(Math.abs(fay)>excT)state.cntY++;
+    if(Math.abs(faz)>excT)state.cntZ++;
+  }
+  updateCountsDisplay();
 
-  // Update peak
-  if (res > state.peakG) state.peakG = res;
-  document.getElementById('peakG').textContent = state.peakG.toFixed(2);
+  const flagged=Date.now()<state.discomfortUntil;
+  const now=new Date();
+  const fresultant=parseFloat(Math.sqrt(fax*fax+faz*faz).toFixed(4));
 
-  // Apply band-pass filter (0.4–10 Hz) to each axis
-  const fax = bandPass('x', state.ax);
-  const fay = bandPass('y', state.ay);
-  const faz = bandPass('z', state.az);
-  const fres = Math.sqrt(fax * fax + faz * faz);
-
-  const flagged = Date.now() < state.discomfortUntil;
-  const now = new Date();
-  const row = {
-    timestamp: now.toISOString(),
-    session: cfg.sessionName,
-    lat: state.lat ? parseFloat(state.lat.toFixed(6)) : null,
-    lng: state.lng ? parseFloat(state.lng.toFixed(6)) : null,
-    speed: parseFloat(spd.toFixed(2)),
-    ax: parseFloat(state.ax.toFixed(4)),
-    ay: parseFloat(state.ay.toFixed(4)),
-    az: parseFloat(state.az.toFixed(4)),
-    resultant: parseFloat(res.toFixed(4)),
-    fax: parseFloat(fax.toFixed(4)),
-    fay: parseFloat(fay.toFixed(4)),
-    faz: parseFloat(faz.toFixed(4)),
-    fresultant: parseFloat(fres.toFixed(4)),
-    discomfort: flagged ? 1 : 0,
-    synced: 0
+  const row={
+    timestamp:now.toISOString(), session:cfg.sessionName, trackClass:cfg.trackClass,
+    lat:state.lat?parseFloat(state.lat.toFixed(6)):null,
+    lng:state.lng?parseFloat(state.lng.toFixed(6)):null,
+    speed:parseFloat(spd.toFixed(2)), distKm:parseFloat(state.distKm.toFixed(4)),
+    fax:parseFloat(fax.toFixed(4)), fay:parseFloat(fay.toFixed(4)), faz:parseFloat(faz.toFixed(4)),
+    fresultant, countPaused:state.paused?1:0,
+    discomfort:flagged?1:0, synced:0
   };
 
-  // Rolling buffer for discomfort retroactive flagging
+  // Rolling 5 s buffer = 25 readings (req #8)
   state.buffer.push(row);
-  if (state.buffer.length > 10) state.buffer.shift();
+  if(state.buffer.length>25)state.buffer.shift();
 
-  // Save to IndexedDB — always, regardless of connectivity
-  try { await dbAdd(row); } catch(e) { console.error('DB write failed', e); }
-
-  addLogRow(row, flagged);
+  try{await dbAdd(row)}catch(e){console.error('DB write failed',e)}
+  addLogRow(row,flagged);
 }
 
-// ═══════════════════════════════════════════════════════════
-// Discomfort marker
-// ═══════════════════════════════════════════════════════════
-async function markDiscomfort() {
-  const btn = document.getElementById('discomfortBtn');
-  btn.classList.add('fired');
-  setTimeout(() => btn.classList.remove('fired'), 400);
-
-  // Flag 3s forward
-  state.discomfortUntil = Date.now() + 3000;
-
-  // Retroactively update buffer rows in DB
-  for (const r of state.buffer) {
-    r.discomfort = 1;
-    // Update in DB
-    if (r.id && db) {
-      const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(r);
-    }
-  }
-
-  // Insert a PEAK_SUMMARY row
-  if (state.buffer.length > 0) {
-    const peakX = Math.max(...state.buffer.map(r => Math.abs(r.ax)));
-    const peakY = Math.max(...state.buffer.map(r => Math.abs(r.ay)));
-    const peakZ = Math.max(...state.buffer.map(r => Math.abs(r.az)));
-    const summary = {
-      timestamp: new Date().toISOString(),
-      session: cfg.sessionName,
-      lat: state.lat ? parseFloat(state.lat.toFixed(6)) : null,
-      lng: state.lng ? parseFloat(state.lng.toFixed(6)) : null,
-      speed: parseFloat(state.speed.toFixed(2)),
-      ax: parseFloat(peakX.toFixed(4)),
-      ay: parseFloat(peakY.toFixed(4)),
-      az: parseFloat(peakZ.toFixed(4)),
-      resultant: parseFloat(Math.sqrt(peakX*peakX + peakZ*peakZ).toFixed(4)),
-      discomfort: 'PEAK_SUMMARY',
-      synced: 0
-    };
-    try { await dbAdd(summary); } catch(e) {}
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// Log table (DOM, last 50 rows only)
-// ═══════════════════════════════════════════════════════════
-function addLogRow(row, flagged) {
-  const body = document.getElementById('logBody');
-  const placeholder = body.querySelector('[data-ph]');
-  if (placeholder) body.innerHTML = '';
-  const div = document.createElement('div');
-  div.className = 'log-row' + (flagged ? ' flagged' : '');
-  const t = new Date(row.timestamp);
-  const timeStr = t.toTimeString().slice(0, 8);
-  div.innerHTML =
-    `<span class="log-cell time">${timeStr}</span>` +
-    `<span class="log-cell">${row.ax.toFixed(2)}</span>` +
-    `<span class="log-cell">${row.ay.toFixed(2)}</span>` +
-    `<span class="log-cell">${row.az.toFixed(2)}</span>` +
-    `<span class="log-cell filtered">${(row.fax||0).toFixed(2)}</span>` +
-    `<span class="log-cell filtered">${(row.fay||0).toFixed(2)}</span>` +
-    `<span class="log-cell filtered">${(row.faz||0).toFixed(2)}</span>` +
-    `<span class="log-cell flag">${flagged ? '!' : ''}</span>`;
-  body.insertBefore(div, body.firstChild);
-  while (body.children.length > 50) body.removeChild(body.lastChild);
-}
-
-// ═══════════════════════════════════════════════════════════
-// Background sync to Google Sheets
-// ═══════════════════════════════════════════════════════════
-async function backgroundSync() {
-  if (!cfg.sheetsUrl || !state.online || state.syncing) return;
-  const rows = await dbGetUnsynced(500);
-  if (rows.length === 0) return;
-  state.syncing = true;
-  try {
-    await fetch(cfg.sheetsUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rows })
-    });
-    await dbMarkSynced(rows.map(r => r.id));
-    updateStorageUI();
-  } catch(e) {
-    // Stay offline, retry on next interval
-  } finally {
-    state.syncing = false;
-  }
-}
-
-async function manualSync() {
-  if (!cfg.sheetsUrl) { alert('No Sheets URL configured.'); return; }
-  if (!state.online) { alert('No internet connection. Data is saved locally and will sync automatically when connectivity returns.'); return; }
-  await backgroundSync();
-  await updateStorageUI();
-  alert('Sync complete.');
-}
-
-async function clearSyncedRows() {
-  if (!confirm('Delete already-synced rows from local storage? This frees space. Un-synced rows are kept.')) return;
-  await dbDeleteSynced();
-  updateStorageUI();
-}
-
-// ═══════════════════════════════════════════════════════════
-// Storage UI
-// ═══════════════════════════════════════════════════════════
-async function updateStorageUI() {
-  const { unsynced, synced } = await dbCounts();
-  const total = unsynced + synced;
-  document.getElementById('unsyncedCount').textContent = unsynced + ' pending';
-  document.getElementById('syncedCount').textContent = synced + ' synced';
-  const pct = total > 0 ? Math.round(synced / total * 100) : 0;
-  document.getElementById('syncProgress').style.width = pct + '%';
-  document.getElementById('storageStatus').textContent =
-    total === 0 ? 'No data yet' :
-    state.syncing ? 'Syncing…' :
-    !cfg.sheetsUrl ? total + ' rows saved locally (no Sheets URL)' :
-    !state.online ? total + ' rows saved — will sync when online' :
-    pct === 100 ? 'All rows synced to Sheets' :
-    unsynced + ' rows pending sync';
-}
-
-// ═══════════════════════════════════════════════════════════
-// Connectivity banner
-// ═══════════════════════════════════════════════════════════
-function updateConnBanner() {
-  const banner = document.getElementById('connBanner');
-  const text = document.getElementById('connText');
-  if (state.online) {
-    banner.className = 'conn-banner online';
-    text.textContent = cfg.sheetsUrl ? 'Online — syncing to Google Sheets' : 'Online — no Sheets URL configured';
-    // Auto-hide after 4s if online
-    setTimeout(() => { if (state.online) banner.classList.add('hidden'); }, 4000);
-  } else {
-    banner.className = 'conn-banner';
-    text.textContent = 'Offline — all data saving to device storage';
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// CSV Export (fully offline — reads from IndexedDB)
-// ═══════════════════════════════════════════════════════════
-async function exportCSV() {
-  const rows = await dbGetAll();
-  if (rows.length === 0) { alert('No data recorded yet.'); return; }
-  const headers = [
-    'id','timestamp','session','lat','lng','speed_kmh',
-    'ax_ms2','ay_ms2','az_ms2','resultant_ms2',
-    'fax_ms2 (BP 0.4-10Hz)','fay_ms2 (BP 0.4-10Hz)','faz_ms2 (BP 0.4-10Hz)','fresultant_ms2 (BP 0.4-10Hz)',
-    'discomfort','synced'
-  ];
-  const lines = [headers.join(',')];
-  rows.forEach(r => {
-    lines.push([
-      r.id, r.timestamp, '"' + (r.session||'') + '"',
-      r.lat||'', r.lng||'', r.speed||'',
-      r.ax||'', r.ay||'', r.az||'', r.resultant||'',
-      r.fax||'', r.fay||'', r.faz||'', r.fresultant||'',
-      r.discomfort||0, r.synced||0
-    ].join(','));
+// ═══ Counts display with quality colouring (req #2, #6) ═══════
+function updateCountsDisplay(){
+  const km=state.distKm, hasKm=km>=1.0, tc=cfg.trackClass;
+  ['X','Y'].forEach(ax=>{
+    const cnt=ax==='X'?state.cntX:state.cntY;
+    const pkm=hasKm?cnt/km:null;
+    const qc=getQC(pkm,tc), ql=getQL(pkm,tc);
+    document.getElementById('cell'+ax).className='cc '+qc;
+    document.getElementById('cnt'+ax).textContent=cnt;
+    document.getElementById('pkm'+ax).textContent=hasKm?pkm.toFixed(2)+'/km':'—/km';
+    document.getElementById('qual'+ax).textContent=ql;
   });
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'track-ride-' + (cfg.sessionName || 'data').replace(/[^a-z0-9]/gi, '_') + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
+  // Z — no standard, just show count and pkm
+  document.getElementById('cntZ').textContent=state.cntZ;
+  document.getElementById('pkmZ').textContent=km>=1?(state.cntZ/km).toFixed(2)+'/km':'—/km';
 }
 
-// ═══════════════════════════════════════════════════════════
-// Wake Lock — keeps screen on during active session
-// ═══════════════════════════════════════════════════════════
-async function acquireWakeLock() {
-  if (!('wakeLock' in navigator)) return;
-  try {
-    state.wakeLock = await navigator.wakeLock.request('screen');
-    state.wakeLock.addEventListener('release', () => {
-      state.wakeLock = null;
-      if (state.running) acquireWakeLock();
-    });
-  } catch (e) {}
-}
+// ═══ Discomfort — ±5 sec = 25 readings before + 25 after (req #8) ═
+async function markDiscomfort(){
+  const btn=document.getElementById('discomfortBtn');
+  btn.classList.add('fired');
+  setTimeout(()=>btn.classList.remove('fired'),400);
 
-async function releaseWakeLock() {
-  if (state.wakeLock) { await state.wakeLock.release(); state.wakeLock = null; }
-}
+  // Flag 5 seconds forward
+  state.discomfortUntil=Date.now()+5000;
 
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && state.running) acquireWakeLock();
-});
+  // Retroactively flag full 5 s buffer (25 readings already saved)
+  for(const r of state.buffer){
+    r.discomfort=1;
+    if(r.id&&db){try{await dbPut(r)}catch(e){}}
+  }
 
-// ═══════════════════════════════════════════════════════════
-// Session control
-// ═══════════════════════════════════════════════════════════
-function toggleSession() {
-  state.running = !state.running;
-  const btn = document.getElementById('sessionBtn');
-  const dot = document.getElementById('sessionDot');
-  if (state.running) {
-    state.peakG = 0; state.buffer = [];
-    state.sessionStart = Date.now();
-    resetFilters();
-    btn.textContent = 'Stop Session';
-    btn.className = 'btn danger-btn';
-    dot.className = 'session-dot live';
-    acquireWakeLock();
-  } else {
-    btn.textContent = 'Start Session';
-    btn.className = 'btn primary';
-    dot.className = 'session-dot';
-    document.getElementById('sessionLabel').textContent = 'Stopped';
-    document.getElementById('recStrip').classList.add('hidden');
-    releaseWakeLock();
+  // Peak summary row (filtered values only)
+  if(state.buffer.length>0){
+    const pfx=Math.max(...state.buffer.map(r=>Math.abs(r.fax||0)));
+    const pfy=Math.max(...state.buffer.map(r=>Math.abs(r.fay||0)));
+    const pfz=Math.max(...state.buffer.map(r=>Math.abs(r.faz||0)));
+    try{await dbAdd({
+      timestamp:new Date().toISOString(), session:cfg.sessionName, trackClass:cfg.trackClass,
+      lat:state.lat?parseFloat(state.lat.toFixed(6)):null,
+      lng:state.lng?parseFloat(state.lng.toFixed(6)):null,
+      speed:parseFloat(state.speed.toFixed(2)), distKm:parseFloat(state.distKm.toFixed(4)),
+      fax:parseFloat(pfx.toFixed(4)), fay:parseFloat(pfy.toFixed(4)), faz:parseFloat(pfz.toFixed(4)),
+      fresultant:parseFloat(Math.sqrt(pfx*pfx+pfz*pfz).toFixed(4)),
+      discomfort:'PEAK_SUMMARY_5S', synced:0
+    })}catch(e){}
   }
 }
 
-// Timer
-setInterval(() => {
-  if (state.running && state.sessionStart) {
-    const s = Math.floor((Date.now() - state.sessionStart) / 1000);
-    const h = String(Math.floor(s / 3600)).padStart(2, '0');
-    const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-    const sec = String(s % 60).padStart(2, '0');
-    document.getElementById('sessionLabel').textContent = `Rec • ${h}:${m}:${sec}`;
-  }
-}, 1000);
+// ═══ Log table (req #3 — filtered only) ══════════════════════
+function addLogRow(row,flagged){
+  const body=document.getElementById('logBody');
+  if(body.querySelector('[data-ph]'))body.innerHTML='';
+  const d=document.createElement('div');
+  d.className='log-row'+(flagged?' flagged':'')+(row.countPaused?' pr':'');
+  const t=new Date(row.timestamp).toTimeString().slice(0,8);
+  d.innerHTML=`<span class="lc t">${t}</span>`+
+    `<span class="lc">${(row.fax||0).toFixed(3)}</span>`+
+    `<span class="lc">${(row.fay||0).toFixed(3)}</span>`+
+    `<span class="lc">${(row.faz||0).toFixed(3)}</span>`+
+    `<span class="lc f">${flagged?'!':(row.countPaused?'⏸':'')}</span>`;
+  body.insertBefore(d,body.firstChild);
+  while(body.children.length>50)body.removeChild(body.lastChild);
+}
 
-// ═══════════════════════════════════════════════════════════
-// Config modal
-// ═══════════════════════════════════════════════════════════
-function showConfig() {
-  if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-    DeviceMotionEvent.requestPermission().then(r => { if (r === 'granted') attachMotion(); }).catch(() => {});
+// ═══ Pause (req #7) ═══════════════════════════════════════════
+function togglePause(){
+  state.paused=!state.paused;
+  const btn=document.getElementById('pauseBtn'), dot=document.getElementById('sessionDot');
+  if(state.paused){
+    btn.textContent='▶ Resume'; btn.className='btn primary'; dot.className='sdot paused';
+  }else{
+    btn.textContent='⏸ Pause'; btn.className='btn warn-btn'; dot.className='sdot live';
   }
+}
+
+// ═══ Pre-session (req #4) ═════════════════════════════════════
+let _tc=null;
+function showPreSession(){
+  _tc=cfg.trackClass;
+  selectTC(_tc);
+  document.getElementById('psName').value=cfg.sessionName;
+  document.getElementById('psOverlay').classList.remove('hidden');
+}
+function selectTC(cls){
+  _tc=cls;
+  document.getElementById('tcBtn110').className='tc-btn'+(cls==='110'?' selected':'');
+  document.getElementById('tcBtn160').className='tc-btn'+(cls==='160'?' selected':'');
+}
+function confirmPS(){
+  if(!_tc){alert('Please select a track class.');return}
+  cfg.trackClass=_tc;
+  cfg.sessionName=document.getElementById('psName').value.trim()||'Session 1';
+  localStorage.setItem('trackClass',cfg.trackClass);
+  localStorage.setItem('sessionName',cfg.sessionName);
+  document.getElementById('psOverlay').classList.add('hidden');
+  updateTrackBadge(); updateCountsTitle();
+  startSessionNow();
+}
+function updateTrackBadge(){
+  const el=document.getElementById('trackBadge');
+  if(el)el.textContent=cfg.trackClass==='110'?'≤110 km/h':'>110 km/h';
+}
+function updateCountsTitle(){
+  const t=cfg.trackClass==='110'?cfg.thresh110:cfg.thresh160;
+  const el=document.getElementById('countsTitle');
+  if(el)el.textContent='Exceedances — threshold: '+t.toFixed(2)+' m/s²';
+}
+
+// ═══ Session control ══════════════════════════════════════════
+function toggleSession(){
+  if(!state.running)showPreSession();
+  else stopSession();
+}
+function startSessionNow(){
+  state.running=true; state.paused=false;
+  state.buffer=[]; state.cntX=0; state.cntY=0; state.cntZ=0;
+  state.distKm=0; state.prevLat=null; state.prevLng=null;
+  state.sessionStart=Date.now();
+  resetFilters();
+  const btn=document.getElementById('sessionBtn');
+  btn.textContent='Stop Session'; btn.className='btn danger-btn';
+  document.getElementById('sessionDot').className='sdot live';
+  document.getElementById('pauseBtn').classList.remove('hidden');
+  document.getElementById('pauseBtn').textContent='⏸ Pause';
+  document.getElementById('pauseBtn').className='btn warn-btn';
+  updateCountsDisplay();
+  acquireWakeLock();
+}
+function stopSession(){
+  state.running=false; state.paused=false;
+  const btn=document.getElementById('sessionBtn');
+  btn.textContent='Start Session'; btn.className='btn primary';
+  document.getElementById('sessionDot').className='sdot';
+  document.getElementById('sessionLabel').textContent='Stopped';
+  document.getElementById('recStrip').classList.add('hidden');
+  document.getElementById('pauseBtn').classList.add('hidden');
+  releaseWakeLock();
+}
+setInterval(()=>{
+  if(state.running&&state.sessionStart){
+    const s=Math.floor((Date.now()-state.sessionStart)/1000);
+    const h=String(Math.floor(s/3600)).padStart(2,'0');
+    const m=String(Math.floor((s%3600)/60)).padStart(2,'0');
+    const sc=String(s%60).padStart(2,'0');
+    document.getElementById('sessionLabel').textContent=(state.paused?'Paused':'Rec')+' • '+h+':'+m+':'+sc;
+  }
+},1000);
+
+// ═══ Sync ═════════════════════════════════════════════════════
+async function backgroundSync(){
+  if(!cfg.sheetsUrl||!state.online||state.syncing)return;
+  const rows=await dbGetUnsynced(500);
+  if(!rows.length)return;
+  state.syncing=true;
+  try{
+    await fetch(cfg.sheetsUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows})});
+    await dbMarkSynced(rows.map(r=>r.id));
+    updateStorageUI();
+  }catch(e){}finally{state.syncing=false}
+}
+async function manualSync(){
+  if(!cfg.sheetsUrl){alert('No Sheets URL configured.');return}
+  if(!state.online){alert('No connection. Data saves locally and syncs automatically.');return}
+  await backgroundSync(); await updateStorageUI(); alert('Sync complete.');
+}
+async function clearSyncedRows(){
+  if(!confirm('Remove already-synced rows from device storage?'))return;
+  await dbDeleteSynced(); updateStorageUI();
+}
+
+// ═══ Storage UI ═══════════════════════════════════════════════
+async function updateStorageUI(){
+  const{unsynced,synced}=await dbCounts(), total=unsynced+synced;
+  document.getElementById('unsyncedCount').textContent=unsynced+' pending';
+  document.getElementById('syncedCount').textContent=synced+' synced';
+  const pct=total>0?Math.round(synced/total*100):0;
+  document.getElementById('syncProgress').style.width=pct+'%';
+  document.getElementById('storageStatus').textContent=
+    total===0?'No data yet':state.syncing?'Syncing…':
+    !cfg.sheetsUrl?total+' rows saved locally (no Sheets URL)':
+    !state.online?total+' rows saved — syncs when online':
+    pct===100?'All rows synced to Sheets':unsynced+' rows pending sync';
+}
+
+// ═══ Connectivity banner ══════════════════════════════════════
+function updateConnBanner(){
+  const b=document.getElementById('connBanner'),t=document.getElementById('connText');
+  if(state.online){
+    b.className='conn-banner online';
+    t.textContent=cfg.sheetsUrl?'Online — syncing to Google Sheets':'Online — no Sheets URL configured';
+    setTimeout(()=>{if(state.online)b.classList.add('hidden')},4000);
+  }else{b.className='conn-banner';t.textContent='Offline — all data saving to device'}
+}
+
+// ═══ CSV Export (filtered only, req #3) ══════════════════════
+async function exportCSV(){
+  const rows=await dbGetAll();
+  if(!rows.length){alert('No data recorded yet.');return}
+  const h=['id','timestamp','session','track_class','lat','lng','speed_kmh','dist_km',
+    'fax_ms2 (BP 0.4-10Hz)','fay_ms2 (BP 0.4-10Hz)','faz_ms2 (BP 0.4-10Hz)','fresultant_ms2',
+    'count_paused','discomfort','synced'];
+  const lines=[h.join(',')];
+  rows.forEach(r=>lines.push([
+    r.id,r.timestamp,'"'+(r.session||'')+'"',r.trackClass||'',
+    r.lat||'',r.lng||'',r.speed||'',r.distKm||'',
+    r.fax||'',r.fay||'',r.faz||'',r.fresultant||'',
+    r.countPaused||0,r.discomfort||0,r.synced||0
+  ].join(',')));
+  const blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='track-ride-'+(cfg.sessionName||'data').replace(/[^a-z0-9]/gi,'_')+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ═══ Wake Lock ════════════════════════════════════════════════
+async function acquireWakeLock(){
+  if(!('wakeLock'in navigator))return;
+  try{state.wakeLock=await navigator.wakeLock.request('screen');
+    state.wakeLock.addEventListener('release',()=>{state.wakeLock=null;if(state.running)acquireWakeLock()})}
+  catch(e){}
+}
+async function releaseWakeLock(){if(state.wakeLock){await state.wakeLock.release();state.wakeLock=null}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.running)acquireWakeLock()});
+
+// ═══ Config modal ═════════════════════════════════════════════
+function showConfig(){
+  if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function')
+    DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')attachMotion()}).catch(()=>{});
   document.getElementById('configModal').classList.remove('hidden');
 }
-function closeConfig() { document.getElementById('configModal').classList.add('hidden'); }
-function saveConfig() {
-  cfg.sheetsUrl   = document.getElementById('cfgUrl').value.trim();
-  cfg.sessionName = document.getElementById('cfgSession').value.trim() || 'Session 1';
-  cfg.threshold   = parseFloat(document.getElementById('cfgThreshold').value) || 80;
-  localStorage.setItem('sheetsUrl', cfg.sheetsUrl);
-  localStorage.setItem('sessionName', cfg.sessionName);
-  localStorage.setItem('threshold', cfg.threshold);
-  // Update all threshold labels in UI
-  const tl = document.getElementById('logThreshLabel');
-  if (tl) tl.textContent = cfg.threshold;
-  updateConnBanner();
-  closeConfig();
+function closeConfig(){document.getElementById('configModal').classList.add('hidden')}
+function saveConfig(){
+  cfg.sheetsUrl=document.getElementById('cfgUrl').value.trim();
+  cfg.threshold=parseFloat(document.getElementById('cfgThreshold').value)||80;
+  cfg.thresh110=parseFloat(document.getElementById('cfgT110').value)||1.96;
+  cfg.thresh160=parseFloat(document.getElementById('cfgT160').value)||1.47;
+  localStorage.setItem('sheetsUrl',cfg.sheetsUrl);
+  localStorage.setItem('threshold',cfg.threshold);
+  localStorage.setItem('thresh110',cfg.thresh110);
+  localStorage.setItem('thresh160',cfg.thresh160);
+  const tl=document.getElementById('logThreshLabel');
+  if(tl)tl.textContent=cfg.threshold;
+  updateCountsTitle(); updateConnBanner(); closeConfig();
 }
 </script>
 </body>
