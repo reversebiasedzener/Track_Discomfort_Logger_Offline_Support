@@ -234,7 +234,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
     <div class="counts-card">
       <div class="counts-hdr">
         <span class="counts-title" id="countsTitle">Exceedances — select track class</span>
-        <span class="counts-km" id="kmDisplay">0.00 km</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="counts-km" id="kmDisplay">0.00 km</span>
+          <button id="resetCountsBtn" onclick="resetCounts()" class="hidden" style="font-size:10px;color:var(--muted);background:transparent;border:1px solid var(--border2);border-radius:4px;padding:2px 8px;cursor:pointer;font-family:var(--sans)">↺ Reset</button>
+        </div>
       </div>
       <div class="counts-grid">
         <div class="cc" id="cellX">
@@ -427,6 +430,7 @@ function getQL(pkm,tc){
 const cfg={
   sheetsUrl: localStorage.getItem('sheetsUrl')||'',
   sessionName: localStorage.getItem('sessionName')||'Session 1',
+  sessionCounter: parseInt(localStorage.getItem('sessionCounter')||'1'),
   threshold: parseFloat(localStorage.getItem('threshold')||'80'),
   thresh110: parseFloat(localStorage.getItem('thresh110')||'1.96'),
   thresh160: parseFloat(localStorage.getItem('thresh160')||'1.47'),
@@ -633,7 +637,14 @@ function updateCountsDisplay(){
   document.getElementById('pkmZ').textContent=km>=1?(state.cntZ/km).toFixed(2)+'/km':'—/km';
 }
 
-// ═══ Discomfort — ±5 sec = 25 readings before + 25 after (req #8) ═
+function resetCounts(){
+  state.cntX=0; state.cntY=0; state.cntZ=0;
+  state.distKm=0; state.prevLat=null; state.prevLng=null;
+  updateCountsDisplay();
+  document.getElementById('kmDisplay').textContent='0.00 km';
+}
+
+// ═══ Discomfort — ±5 sec = 125 readings at 25 Hz (req #8) ═══
 async function markDiscomfort(){
   const btn=document.getElementById('discomfortBtn');
   btn.classList.add('fired');
@@ -697,7 +708,8 @@ let _tc=null;
 function showPreSession(){
   _tc=cfg.trackClass;
   selectTC(_tc);
-  document.getElementById('psName').value=cfg.sessionName;
+  // Pre-fill with next auto number; user can overwrite with any name
+  document.getElementById('psName').value='Session '+cfg.sessionCounter;
   document.getElementById('psOverlay').classList.remove('hidden');
 }
 function selectTC(cls){
@@ -708,9 +720,11 @@ function selectTC(cls){
 function confirmPS(){
   if(!_tc){alert('Please select a track class.');return}
   cfg.trackClass=_tc;
-  cfg.sessionName=document.getElementById('psName').value.trim()||'Session 1';
+  cfg.sessionName=document.getElementById('psName').value.trim()||'Session '+cfg.sessionCounter;
+  cfg.sessionCounter++;
   localStorage.setItem('trackClass',cfg.trackClass);
   localStorage.setItem('sessionName',cfg.sessionName);
+  localStorage.setItem('sessionCounter',cfg.sessionCounter);
   document.getElementById('psOverlay').classList.add('hidden');
   updateTrackBadge(); updateCountsTitle();
   startSessionNow();
@@ -742,6 +756,7 @@ function startSessionNow(){
   document.getElementById('pauseBtn').classList.remove('hidden');
   document.getElementById('pauseBtn').textContent='⏸ Pause';
   document.getElementById('pauseBtn').className='btn warn-btn';
+  document.getElementById('resetCountsBtn').classList.remove('hidden');
   updateCountsDisplay();
   acquireWakeLock();
 }
@@ -753,6 +768,7 @@ function stopSession(){
   document.getElementById('sessionLabel').textContent='Stopped';
   document.getElementById('recStrip').classList.add('hidden');
   document.getElementById('pauseBtn').classList.add('hidden');
+  document.getElementById('resetCountsBtn').classList.add('hidden');
   releaseWakeLock();
 }
 setInterval(()=>{
