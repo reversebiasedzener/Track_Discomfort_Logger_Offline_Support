@@ -547,7 +547,7 @@ function filterTick(){
       document.getElementById('recStripText').textContent='Recording • '+spd.toFixed(1)+' km/h • '+state.distKm.toFixed(2)+' km';
     }else{
       strip.className='rec-strip waiting';
-      document.getElementById('recStripText').textContent='Waiting for '+cfg.threshold+' km/h — currently '+spd.toFixed(1)+' km/h';
+      document.getElementById('recStripText').textContent='Counting active • waiting for '+cfg.threshold+' km/h to record — '+spd.toFixed(1)+' km/h';
     }
   }else strip.classList.add('hidden');
 }
@@ -557,19 +557,24 @@ function filterTick(){
 // Uses the latest state.fax/fay/faz already computed by filterTick.
 async function recordTick(){
   const spd=state.speed, above=spd>=cfg.threshold;
-  if(!state.running||!above)return;
+
+  // Distance — accumulate only when actually moving (>3 km/h filters GPS
+  // drift at standstill). prevLat always advances so no phantom jumps on resume.
+  if(state.lat!==null){
+    if(state.running && spd>3 && state.prevLat!==null){
+      const d=haversineKm(state.prevLat,state.prevLng,state.lat,state.lng);
+      const capKm=Math.max(0.05,(spd/3600)*4); // speed-aware sanity cap
+      if(d<capKm)state.distKm+=d;
+    }
+    state.prevLat=state.lat; state.prevLng=state.lng;
+  }
+  document.getElementById('kmDisplay').textContent=state.distKm.toFixed(2)+' km';
+
+  if(!state.running)return;
 
   const fax=state.fax, fay=state.fay, faz=state.faz;
 
-  // Distance accumulation via GPS haversine
-  if(state.lat!==null&&state.prevLat!==null){
-    const d=haversineKm(state.prevLat,state.prevLng,state.lat,state.lng);
-    if(d<0.1)state.distKm+=d;
-  }
-  state.prevLat=state.lat; state.prevLng=state.lng;
-  document.getElementById('kmDisplay').textContent=state.distKm.toFixed(2)+' km';
-
-  // Exceedance counts — suspended when paused
+  // Exceedance counts — recorded regardless of speed, suspended only when paused.
   const excT=cfg.trackClass==='110'?cfg.thresh110:cfg.thresh160;
   if(!state.paused){
     if(Math.abs(fax)>excT)state.cntX++;
@@ -578,6 +583,8 @@ async function recordTick(){
   }
   updateCountsDisplay();
 
+  // Build row — always, regardless of speed, so the discomfort buffer
+  // has real filtered values available at any speed.
   const flagged=Date.now()<state.discomfortUntil;
   const now=new Date();
   const fresultant=parseFloat(Math.sqrt(fax*fax+faz*faz).toFixed(4));
@@ -592,9 +599,13 @@ async function recordTick(){
     discomfort:flagged?1:0, synced:0
   };
 
-  // Rolling 5 s buffer = 125 readings at 25 Hz
+  // Rolling 5 s buffer maintained at all speeds — discomfort button can
+  // be pressed at any speed and will always have recent data to summarise.
   state.buffer.push(row);
   if(state.buffer.length>125)state.buffer.shift();
+
+  // DB recording only above speed threshold (testing mode; review for rollout).
+  if(!above)return;
 
   try{await dbAdd(row)}catch(e){console.error('DB write failed',e)}
   addLogRow(row,flagged);
