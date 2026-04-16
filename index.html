@@ -296,7 +296,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
     <div>
       <button class="disc-btn" id="discomfortBtn" onclick="markDiscomfort()">
         ⚠ MARK DISCOMFORT
-        <div class="disc-sub">Saves ±5 sec filtered window (25 readings before + 25 after) with GPS location</div>
+        <div class="disc-sub">Saves ±5 sec filtered window (125 readings before + 125 after) with GPS location</div>
       </button>
     </div>
 
@@ -448,7 +448,8 @@ window.addEventListener('DOMContentLoaded',async()=>{
   updateStorageUI();
   startGPS();
   requestMotionPermission();
-  setInterval(tick,200);
+  setInterval(filterTick,20);   // 50 Hz — filter + display
+  setInterval(recordTick,40);   // 25 Hz — save to DB + counts
   setInterval(backgroundSync,5000);
   setInterval(updateStorageUI,4000);
   updateConnBanner();
@@ -497,7 +498,9 @@ function attachMotion(){
 }
 
 // ═══ Band-pass 0.4–10 Hz, 2nd-order Butterworth ══════════════
-const FS=5.0;
+// Filter runs at 50 Hz (every 20 ms) — Nyquist = 25 Hz, gives 10 Hz LP full headroom.
+// Output recorded at 25 Hz (every 40 ms) — oversampling with decimation.
+const FS=50.0;
 function mkHP(fc,fs){const K=Math.tan(Math.PI*fc/fs),n=1/(1+Math.SQRT2*K+K*K);return{b0:n,b1:-2*n,b2:n,a1:2*(K*K-1)*n,a2:(1-Math.SQRT2*K+K*K)*n}}
 function mkLP(fc,fs){const K=Math.tan(Math.PI*fc/fs),n=1/(1+Math.SQRT2*K+K*K);return{b0:K*K*n,b1:2*K*K*n,b2:K*K*n,a1:2*(K*K-1)*n,a2:(1-Math.SQRT2*K+K*K)*n}}
 const HP=mkHP(0.4,FS),LP=mkLP(10.0,FS);
@@ -507,8 +510,11 @@ function bq(c,s,xn){const yn=c.b0*xn+c.b1*s.x1+c.b2*s.x2-c.a1*s.y1-c.a2*s.y2;s.x
 function BP(ax,raw){return bq(LP,fst.lp[ax],bq(HP,fst.hp[ax],raw))}
 function resetFilters(){['x','y','z'].forEach(a=>{fst.hp[a]=mkBQ();fst.lp[a]=mkBQ()})}
 
-// ═══ Main tick — 200 ms ═══════════════════════════════════════
-async function tick(){
+// ═══ Filter tick — 20 ms (50 Hz) ══════════════════════════════
+// Runs filter at full 50 Hz rate for accurate coefficient behaviour.
+// Also updates the live display and recording strip — these need
+// to feel responsive so they run at the faster rate.
+function filterTick(){
   const spd=state.speed, above=spd>=cfg.threshold;
 
   // Speed display
@@ -517,9 +523,11 @@ async function tick(){
   document.getElementById('threshDot').className='thr-dot'+(above?' above':'');
   document.getElementById('threshLabel').textContent=above?'Above '+cfg.threshold+' ✓':'Below '+cfg.threshold;
 
-  // Always filter (keeps filter warm) — display filtered values (req #3)
+  // Always run filter — keeps state warm even below threshold
   const fax=BP('x',state._rx), fay=BP('y',state._ry), faz=BP('z',state._rz);
   state.fax=fax; state.fay=fay; state.faz=faz;
+
+  // Update display at 50 Hz for smooth live readout
   document.getElementById('ax').textContent=fax.toFixed(3);
   document.getElementById('ay').textContent=fay.toFixed(3);
   document.getElementById('az').textContent=faz.toFixed(3);
@@ -542,18 +550,26 @@ async function tick(){
       document.getElementById('recStripText').textContent='Waiting for '+cfg.threshold+' km/h — currently '+spd.toFixed(1)+' km/h';
     }
   }else strip.classList.add('hidden');
+}
 
+// ═══ Record tick — 40 ms (25 Hz) ══════════════════════════════
+// Decimation step: saves every 2nd filter output to IndexedDB.
+// Uses the latest state.fax/fay/faz already computed by filterTick.
+async function recordTick(){
+  const spd=state.speed, above=spd>=cfg.threshold;
   if(!state.running||!above)return;
 
-  // Distance (req #6)
+  const fax=state.fax, fay=state.fay, faz=state.faz;
+
+  // Distance accumulation via GPS haversine
   if(state.lat!==null&&state.prevLat!==null){
     const d=haversineKm(state.prevLat,state.prevLng,state.lat,state.lng);
-    if(d<0.2)state.distKm+=d;
+    if(d<0.1)state.distKm+=d;
   }
   state.prevLat=state.lat; state.prevLng=state.lng;
   document.getElementById('kmDisplay').textContent=state.distKm.toFixed(2)+' km';
 
-  // Exceedance counts — suspended when paused (req #7)
+  // Exceedance counts — suspended when paused
   const excT=cfg.trackClass==='110'?cfg.thresh110:cfg.thresh160;
   if(!state.paused){
     if(Math.abs(fax)>excT)state.cntX++;
@@ -576,9 +592,9 @@ async function tick(){
     discomfort:flagged?1:0, synced:0
   };
 
-  // Rolling 5 s buffer = 25 readings (req #8)
+  // Rolling 5 s buffer = 125 readings at 25 Hz
   state.buffer.push(row);
-  if(state.buffer.length>25)state.buffer.shift();
+  if(state.buffer.length>125)state.buffer.shift();
 
   try{await dbAdd(row)}catch(e){console.error('DB write failed',e)}
   addLogRow(row,flagged);
@@ -610,7 +626,7 @@ async function markDiscomfort(){
   // Flag 5 seconds forward
   state.discomfortUntil=Date.now()+5000;
 
-  // Retroactively flag full 5 s buffer (25 readings already saved)
+  // Retroactively flag full 5 s buffer (125 readings at 25 Hz)
   for(const r of state.buffer){
     r.discomfort=1;
     if(r.id&&db){try{await dbPut(r)}catch(e){}}
