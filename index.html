@@ -144,7 +144,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .btn.hidden{display:none}
 
 /* Footer */
-.app-footer{flex-shrink:0;text-align:center;font-size:9px;color:var(--muted);padding:3px 0 5px;letter-spacing:0.05em}
+.app-footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:3px 12px 5px;font-size:9px;color:var(--muted);letter-spacing:0.04em}
 
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:flex-end;z-index:100}
@@ -321,7 +321,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
     <button class="btn warn-btn hidden" id="pauseBtn" onclick="togglePause()">⏸ Pause</button>
     <button class="btn" onclick="exportCSV()">↓ CSV</button>
   </div>
-  <div class="app-footer">Solapur Division, Central Railway</div>
+  <div class="app-footer">
+    <span id="versionStamp"></span>
+    <span>Solapur Division, Central Railway</span>
+  </div>
 
 </div>
 
@@ -444,6 +447,8 @@ const state={
 
 // ═══ Init ═════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded',async()=>{
+  const vs=document.getElementById('versionStamp');
+  if(vs)vs.textContent='v16 Apr 2026  10:53 IST';
   await openDB();
   updateStorageUI();
   startGPS();
